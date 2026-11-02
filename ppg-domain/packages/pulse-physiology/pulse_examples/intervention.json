@@ -1,0 +1,1 @@
+{"duration_s": 10, "sample_interval_s": 0.02, "state_file": "../../../runs/pulse-baseline-real/state.json", "heart_rate_multiplier": 1.05, "incremental": true, "save_state": true}

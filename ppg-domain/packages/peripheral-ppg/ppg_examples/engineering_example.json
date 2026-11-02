@@ -1,0 +1,209 @@
+{
+  "pulse_executable": "../../../.runtime/pulse/bin/pulse-physiology",
+  "mcx_executable": "../../../.runtime/mcx/venv/bin/mcx-optics",
+  "pulse_config": {
+    "duration_s": 10,
+    "sample_interval_s": 0.02
+  },
+  "local": {
+    "R_in_mmHg_s_per_mL": 1000,
+    "R_out_mmHg_s_per_mL": 1500,
+    "C_mL_per_mmHg": 0.001,
+    "P_venous_mmHg": 5,
+    "P_ref_mmHg": 62,
+    "V_ref_mL": 0.1,
+    "P_initial_mmHg": 62
+  },
+  "mixture": {
+    "f_b_ref": 0.1,
+    "V_sampling_mL": 1
+  },
+  "analysis_start_s": 3,
+  "parameter_source": "engineering_assumption_not_measured",
+  "wavelengths": [
+    {
+      "wavelength_nm": 660,
+      "mua_blood_per_mm": 0.2,
+      "mua_matrix_per_mm": 0.02,
+      "mixture_label": 2,
+      "mcx_config": {
+        "geometry": {
+          "shape_voxels": [
+            40,
+            40,
+            30
+          ],
+          "voxel_mm": 0.25,
+          "layers": [
+            {
+              "z_start": 0,
+              "z_end": 4,
+              "label": 1
+            },
+            {
+              "z_start": 4,
+              "z_end": 30,
+              "label": 2
+            }
+          ],
+          "vessel": {
+            "center_yz_voxels": [
+              20,
+              12
+            ],
+            "radius_voxels": 3,
+            "label": 3
+          }
+        },
+        "optical_properties": [
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0.04,
+            8,
+            0.9,
+            1.4
+          ],
+          [
+            0.02,
+            6,
+            0.9,
+            1.4
+          ],
+          [
+            0.15,
+            10,
+            0.98,
+            1.4
+          ]
+        ],
+        "source": {
+          "position_voxels": [
+            20,
+            20,
+            0
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        },
+        "detector": {
+          "position_voxels": [
+            28,
+            20,
+            0
+          ],
+          "radius_voxels": 3
+        },
+        "nphoton": 1000000,
+        "maxdetphoton": 1000000,
+        "seed": 20261102,
+        "gpuid": 1,
+        "time_window_s": 5e-09,
+        "wavelength_nm": 660,
+        "parameter_source": "engineering_assumption_not_measured",
+        "assumptions": [
+          "Static voxelized layers and cylindrical vessel; optical coefficients are illustrative assumptions, not measured tissue values."
+        ]
+      }
+    },
+    {
+      "wavelength_nm": 940,
+      "mua_blood_per_mm": 0.12,
+      "mua_matrix_per_mm": 0.015,
+      "mixture_label": 2,
+      "mcx_config": {
+        "geometry": {
+          "shape_voxels": [
+            40,
+            40,
+            30
+          ],
+          "voxel_mm": 0.25,
+          "layers": [
+            {
+              "z_start": 0,
+              "z_end": 4,
+              "label": 1
+            },
+            {
+              "z_start": 4,
+              "z_end": 30,
+              "label": 2
+            }
+          ],
+          "vessel": {
+            "center_yz_voxels": [
+              20,
+              12
+            ],
+            "radius_voxels": 3,
+            "label": 3
+          }
+        },
+        "optical_properties": [
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0.03,
+            7,
+            0.9,
+            1.4
+          ],
+          [
+            0.015,
+            5,
+            0.9,
+            1.4
+          ],
+          [
+            0.08,
+            9,
+            0.98,
+            1.4
+          ]
+        ],
+        "source": {
+          "position_voxels": [
+            20,
+            20,
+            0
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ]
+        },
+        "detector": {
+          "position_voxels": [
+            28,
+            20,
+            0
+          ],
+          "radius_voxels": 3
+        },
+        "nphoton": 1000000,
+        "maxdetphoton": 1000000,
+        "seed": 20261103,
+        "gpuid": 1,
+        "time_window_s": 5e-09,
+        "wavelength_nm": 940,
+        "parameter_source": "engineering_assumption_not_measured",
+        "assumptions": [
+          "Static voxelized layers and cylindrical vessel; optical coefficients are illustrative assumptions, not measured tissue values."
+        ]
+      }
+    }
+  ]
+}

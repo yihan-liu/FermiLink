@@ -1,0 +1,14 @@
+# Runtime data and environments at any project depth
+**/.runtime/
+**/.cache/
+**/__pycache__/
+**/.pytest_cache/
+**/*.egg-info/
+**/build/
+**/dist/
+# Acceptance outputs and generated workspace
+/runs/
+/workspaces/fermilink-validation/
+# Upstream source checkouts are fetched at pinned commits by scripts/prepare_upstream.sh
+/upstream/
+*.py[cod]

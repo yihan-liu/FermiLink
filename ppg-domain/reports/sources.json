@@ -1,0 +1,72 @@
+[
+  {
+    "id": "fermilink",
+    "type": "software",
+    "title": "FermiLink registry",
+    "version": "0.3.10",
+    "commit": "1677243",
+    "url": "https://github.com/TaoELi/FermiLink",
+    "local_path": "../src/fermilink/runner/scientific_packages.py",
+    "use": "isolated registry and supported package integration",
+    "accessed": "2026-11-02"
+  },
+  {
+    "id": "pulse",
+    "type": "software",
+    "title": "Pulse Physiology Engine",
+    "commit": "5e29e5b13710a08cec90874be7d36ecb192ebcda",
+    "url": "https://gitlab.kitware.com/physiology/engine",
+    "local_path": "upstream/pulse",
+    "use": "whole-body circulation",
+    "accessed": "2026-11-02"
+  },
+  {
+    "id": "mcx",
+    "type": "software",
+    "title": "MCX",
+    "commit": "49ec9f155107b7b54dece66d24e3c77a208cf2e8",
+    "url": "https://github.com/fangq/mcx",
+    "local_path": "upstream/mcx",
+    "use": "voxel photon transport source",
+    "accessed": "2026-11-02"
+  },
+  {
+    "id": "pmcx",
+    "type": "software",
+    "title": "PMCX CUDA",
+    "version": "0.8.1",
+    "url": "https://pypi.org/project/pmcx/0.8.1/",
+    "local_path": "packages/mcx-optics/README.md",
+    "use": "actual CUDA backend",
+    "accessed": "2026-11-02"
+  },
+  {
+    "id": "photon-replay",
+    "type": "paper",
+    "title": "Yao, Intes and Fang, BOE 9:4588-4603 (2018)",
+    "doi": "10.1364/BOE.9.004588",
+    "url": "https://doi.org/10.1364/BOE.9.004588",
+    "local_path": "packages/mcx-optics/mcx_knowledge/index.md",
+    "use": "photon replay method",
+    "accessed": "2026-11-02"
+  },
+  {
+    "id": "ppg-optics",
+    "type": "paper",
+    "title": "Chatterjee et al., Physiological Measurement 41 084001 (2020)",
+    "doi": "10.1088/1361-6579/aba008",
+    "url": "https://doi.org/10.1088/1361-6579/aba008",
+    "local_path": "packages/peripheral-ppg/ppg_knowledge/index.md",
+    "use": "PPG optical modeling context",
+    "accessed": "2026-11-02"
+  },
+  {
+    "id": "pulse-method",
+    "type": "documentation",
+    "title": "Pulse cardiovascular methodology",
+    "url": "https://pulse.kitware.com/_cardiovascular_methodology.html",
+    "local_path": "packages/pulse-physiology/pulse_knowledge/index.md",
+    "use": "lumped circulation scope",
+    "accessed": "2026-11-02"
+  }
+]

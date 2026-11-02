@@ -1,0 +1,5 @@
+[
+  {"id":"mcx-source", "url":"https://github.com/fangq/mcx", "commit":"49ec9f155107b7b54dece66d24e3c77a208cf2e8", "accessed":"2026-11-02", "local":"../mcx_source/", "use":"MCX and PMCX source and examples"},
+  {"id":"pmcx-wheel", "url":"https://pypi.org/project/pmcx/0.8.1/", "version":"0.8.1", "accessed":"2026-11-02", "local":"../README.md", "use":"actual CUDA binary backend"},
+  {"id":"photon-replay", "doi":"10.1364/BOE.9.004588", "url":"https://doi.org/10.1364/BOE.9.004588", "accessed":"2026-11-02", "local":"index.md", "use":"photon replay method"}
+]
