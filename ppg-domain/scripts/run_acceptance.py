@@ -17,12 +17,12 @@ FERMILINK_ROOT = Path(os.environ.get("FERMILINK_ROOT", str(ROOT.parent)))
 FERMILINK_CLI = FERMILINK_ROOT / ".venv/bin/fermilink"
 CODEX_BIN = ROOT / ".runtime" / "codex-cli"
 REGISTRY = ROOT / ".runtime" / "fermilink-registry"
-PULSE = ROOT / ".runtime" / "pulse" / "bin" / "pulse-physiology"
-MCX = ROOT / ".runtime" / "mcx" / "venv" / "bin" / "mcx-optics"
+PULSE = ROOT / ".runtime" / "pulse" / "bin" / "pulse" if (ROOT / ".runtime" / "pulse" / "bin" / "pulse").is_file() else ROOT / ".runtime" / "pulse" / "bin" / "pulse-physiology"
+MCX = ROOT / ".runtime" / "mcx" / "venv" / "bin" / "mcx" if (ROOT / ".runtime" / "mcx" / "venv" / "bin" / "mcx").is_file() else ROOT / ".runtime" / "mcx" / "venv" / "bin" / "mcx-optics"
 PPG = ROOT / ".runtime" / "ppg-venv" / "bin" / "peripheral-ppg"
 PKGS = {
-    "pulse-physiology": ("pulse_physiology", "pulse_knowledge", "pulse_examples"),
-    "mcx-optics": ("mcx_optics", "mcx_knowledge", "mcx_examples"),
+    "pulse": ("pulse_physiology", "pulse_knowledge", "pulse_examples"),
+    "mcx": ("mcx_optics", "mcx_knowledge", "mcx_examples"),
     "peripheral-ppg": ("peripheral_ppg", "ppg_knowledge", "ppg_examples"),
 }
 
@@ -71,7 +71,7 @@ def check_registration(items: list[dict], env: dict[str, str]) -> bool:
                 return False
         pmeta = packages["peripheral-ppg"]
         dependencies = pmeta.get("dependency_package_ids", pmeta.get("dependencies", []))
-        if set(dependencies) != {"pulse-physiology", "mcx-optics"}:
+        if set(dependencies) != {"pulse", "mcx"}:
             record(items, "fermilink:dependencies", "failed", "peripheral-ppg dependency registration is incomplete", actual=dependencies)
             return False
         record(items, "fermilink:registry", "passed", "all packages registered in isolated registry")
@@ -92,19 +92,19 @@ def check_workspace(items: list[dict]) -> bool:
             "skills/ppg-model/SKILL.md": workspace / "skills/ppg-model/SKILL.md",
             "ppg_knowledge/index.md": workspace / "ppg_knowledge/index.md",
             "ppg_examples/engineering_example.json": workspace / "ppg_examples/engineering_example.json",
-            "external_packages/pulse-physiology/pulse_knowledge/index.md": workspace / "external_packages/pulse-physiology/pulse_knowledge/index.md",
-            "external_packages/pulse-physiology/skills/pulse-circulation/SKILL.md": workspace / "external_packages/pulse-physiology/skills/pulse-circulation/SKILL.md",
-            "external_packages/pulse-physiology/pulse_source": workspace / "external_packages/pulse-physiology/pulse_source",
-            "external_packages/mcx-optics/mcx_knowledge/index.md": workspace / "external_packages/mcx-optics/mcx_knowledge/index.md",
-            "external_packages/mcx-optics/skills/mcx-optics/SKILL.md": workspace / "external_packages/mcx-optics/skills/mcx-optics/SKILL.md",
-            "external_packages/mcx-optics/mcx_source": workspace / "external_packages/mcx-optics/mcx_source",
+            "external_packages/pulse/pulse_knowledge/index.md": workspace / "external_packages/pulse/pulse_knowledge/index.md",
+            "external_packages/pulse/skills/pulse-circulation/SKILL.md": workspace / "external_packages/pulse/skills/pulse-circulation/SKILL.md",
+            "external_packages/pulse/pulse_source": workspace / "external_packages/pulse/pulse_source",
+            "external_packages/mcx/mcx_knowledge/index.md": workspace / "external_packages/mcx/mcx_knowledge/index.md",
+            "external_packages/mcx/skills/mcx/SKILL.md": workspace / "external_packages/mcx/skills/mcx/SKILL.md",
+            "external_packages/mcx/mcx_source": workspace / "external_packages/mcx/mcx_source",
         }
         missing = [name for name, path in expected.items() if not path.exists()]
         dependencies = set(manifest.get("configured_dependency_package_ids", []))
         linked = {item.get("package_id") for item in manifest.get("linked_dependency_packages", [])}
         collisions = manifest.get("collisions", []) + manifest.get("dependency_collisions", [])
         invalid = []
-        if dependencies != {"pulse-physiology", "mcx-optics"}:
+        if dependencies != {"pulse", "mcx"}:
             invalid.append(f"configured dependencies={sorted(dependencies)}")
         if linked != dependencies:
             invalid.append(f"linked dependencies={sorted(linked)}")
@@ -164,7 +164,7 @@ def doctor(items: list[dict], name: str, executable: Path, env: dict[str, str]) 
 def run_solver_acceptance(items: list[dict], run_root: Path, env: dict[str, str]) -> None:
     run_root.mkdir(parents=True, exist_ok=False)
     # Pulse baseline first; control and intervention configurations can restore its state.
-    pulse_examples = ROOT / "packages" / "pulse-physiology" / "pulse_examples"
+    pulse_examples = ROOT / "packages" / "pulse" / "pulse_examples"
     for key in ("baseline", "control", "intervention"):
         config = pulse_examples / f"{key}.json"
         output = run_root / "pulse" / key
@@ -189,7 +189,7 @@ def run_solver_acceptance(items: list[dict], run_root: Path, env: dict[str, str]
         except Exception as error:
             record(items, f"pulse:{key}", "failed", str(error))
 
-    mcx_examples = ROOT / "packages" / "mcx-optics" / "mcx_examples"
+    mcx_examples = ROOT / "packages" / "mcx" / "mcx_examples"
     baselines: dict[int, Path] = {}
     for wavelength in (660, 940):
         config = mcx_examples / f"skin_vessel_{wavelength}.json"
@@ -273,7 +273,7 @@ def run_scientific_checks(items: list[dict], run_root: Path, env: dict[str, str]
 
     mcx_python = MCX.parent / "python"
     detector_run = run_root / "mcx" / "baseline_660nm"
-    detector = command([str(mcx_python), str(ROOT / "packages" / "mcx-optics" / "tests" / "check_detector.py"), str(detector_run)], env=env, timeout=180)
+    detector = command([str(mcx_python), str(ROOT / "packages" / "mcx" / "tests" / "check_detector.py"), str(detector_run)], env=env, timeout=180)
     detector_output = (detector.stdout + detector.stderr)[-3000:]
     detector_status = "passed" if detector.returncode == 0 else "failed"
     record(items, "mcx:detector-normalization-units", detector_status, "Independent raw photon check of voxel path conversion, unit collected fraction, detector area in mm2 and reflectance in mm-2", output=detector_output)
@@ -423,12 +423,12 @@ def main() -> int:
         registered = check_registration(items, env)
         if registered:
             check_workspace(items)
-        for name, executable in (("pulse-physiology", PULSE), ("mcx-optics", MCX), ("peripheral-ppg", PPG)):
+        for name, executable in (("pulse", PULSE), ("mcx", MCX), ("peripheral-ppg", PPG)):
             doctor(items, name, executable, env)
     else:
         solver_results = [
             doctor(items, name, executable, env)
-            for name, executable in (("pulse-physiology", PULSE), ("mcx-optics", MCX))
+            for name, executable in (("pulse", PULSE), ("mcx", MCX))
         ]
         solver_prerequisites = all(solver_results)
         if not all_ready:

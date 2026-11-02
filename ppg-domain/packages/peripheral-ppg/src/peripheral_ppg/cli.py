@@ -163,8 +163,8 @@ def validate_run(path):
 def doctor():
     domain = Path(__file__).resolve().parents[4]
     result = {"package": "peripheral-ppg", "version": __version__, "solvers": {}}
-    for name, fallback in (("pulse-physiology", domain/".runtime/pulse/bin/pulse-physiology"),
-                           ("mcx-optics", domain/".runtime/mcx/venv/bin/mcx-optics")):
+    for name, fallback in (("pulse", domain/".runtime/pulse/bin/pulse"),
+                           ("mcx", domain/".runtime/mcx/venv/bin/mcx")):
         binary = shutil.which(name) or str(fallback)
         try:
             p = subprocess.run([binary, "doctor", "--json"], capture_output=True, text=True, check=False)

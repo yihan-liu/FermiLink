@@ -1,4 +1,4 @@
-# pulse-physiology
+# pulse
 
 调用固定版本的官方 Pulse Python/PyPulse 成人全身模型。`doctor --json` 检查真实后端；`run --config FILE --output NEW_DIR` 在新目录保存数据、状态、日志及 manifest。配置见 `pulse_examples/`；相对状态路径相对配置文件。输出系统动脉压、心率、逐搏汇总 SBP/DBP/MAP、心输出量及主动脉 compartment 压力；并非指端压力。具体建模语义及源码入口见 `pulse_knowledge/index.md`。
 
@@ -7,13 +7,13 @@
 从项目根执行（示例输出目录必须不存在）：
 
 ```sh
-.runtime/pulse/bin/pulse-physiology doctor --json
-.runtime/pulse/bin/pulse-physiology run --config packages/pulse-physiology/pulse_examples/baseline.json --output runs/pulse-baseline-real
-.runtime/pulse/bin/pulse-physiology run --config packages/pulse-physiology/pulse_examples/control.json --output runs/pulse-control-real
-.runtime/pulse/bin/pulse-physiology run --config packages/pulse-physiology/pulse_examples/intervention.json --output runs/pulse-intervention-real
+.runtime/pulse/bin/pulse doctor --json
+.runtime/pulse/bin/pulse run --config packages/pulse/pulse_examples/baseline.json --output runs/pulse-baseline-real
+.runtime/pulse/bin/pulse run --config packages/pulse/pulse_examples/control.json --output runs/pulse-control-real
+.runtime/pulse/bin/pulse run --config packages/pulse/pulse_examples/intervention.json --output runs/pulse-intervention-real
 ```
 
-本机使用 Python 3.12、GCC 13、CMake 4.4.4、OpenJDK 21；构建目录 `.runtime/pulse-build`、虚拟环境 `.runtime/pulse`、JDK `.runtime/pulse-jdk`。安装包命令为 `.runtime/pulse/bin/pip install -e packages/pulse-physiology`。官方源码使用固定 commit；建立独立 Python 环境并安装源码 `requirements.txt` 及 `cmake ninja pybind11 protobuf`，将 `JAVA_HOME` 指向 JDK 后：
+本机使用 Python 3.12、GCC 13、CMake 4.4.4、OpenJDK 21；构建目录 `.runtime/pulse-build`、虚拟环境 `.runtime/pulse`、JDK `.runtime/pulse-jdk`。安装包命令为 `.runtime/pulse/bin/pip install -e packages/pulse`。官方源码使用固定 commit；建立独立 Python 环境并安装源码 `requirements.txt` 及 `cmake ninja pybind11 protobuf`，将 `JAVA_HOME` 指向 JDK 后：
 
 ```sh
 export PATH="$PWD/.runtime/pulse/bin:$PATH"

@@ -36,7 +36,7 @@
     "title": "PMCX CUDA",
     "version": "0.8.1",
     "url": "https://pypi.org/project/pmcx/0.8.1/",
-    "local_path": "packages/mcx-optics/README.md",
+    "local_path": "packages/mcx/README.md",
     "use": "actual CUDA backend",
     "accessed": "2026-11-02"
   },
@@ -46,7 +46,7 @@
     "title": "Yao, Intes and Fang, BOE 9:4588-4603 (2018)",
     "doi": "10.1364/BOE.9.004588",
     "url": "https://doi.org/10.1364/BOE.9.004588",
-    "local_path": "packages/mcx-optics/mcx_knowledge/index.md",
+    "local_path": "packages/mcx/mcx_knowledge/index.md",
     "use": "photon replay method",
     "accessed": "2026-11-02"
   },
@@ -65,7 +65,7 @@
     "type": "documentation",
     "title": "Pulse cardiovascular methodology",
     "url": "https://pulse.kitware.com/_cardiovascular_methodology.html",
-    "local_path": "packages/pulse-physiology/pulse_knowledge/index.md",
+    "local_path": "packages/pulse/pulse_knowledge/index.md",
     "use": "lumped circulation scope",
     "accessed": "2026-11-02"
   }

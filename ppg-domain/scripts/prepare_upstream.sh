@@ -40,5 +40,5 @@ verify_source_link() {
   fi
   echo "source link verified: ${link_path} -> ${expected}"
 }
-verify_source_link pulse-physiology pulse_source pulse
-verify_source_link mcx-optics mcx_source mcx
+verify_source_link pulse pulse_source pulse
+verify_source_link mcx mcx_source mcx

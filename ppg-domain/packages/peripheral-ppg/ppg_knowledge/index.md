@@ -2,7 +2,7 @@
 
 ## 工作区导航与运行
 
-以下路径以 FermiLink 项目工作区根目录为基准：Pulse 知识入口为 `external_packages/pulse-physiology/pulse_knowledge/index.md`，MCX 知识入口为 `external_packages/mcx-optics/mcx_knowledge/index.md`；工程示例配置为 `ppg_examples/engineering_example.json`。示例材料、几何和局部参数均为工程假设，不是人体测量值。
+以下路径以 FermiLink 项目工作区根目录为基准：Pulse 知识入口为 `external_packages/pulse/pulse_knowledge/index.md`，MCX 知识入口为 `external_packages/mcx/mcx_knowledge/index.md`；工程示例配置为 `ppg_examples/engineering_example.json`。示例材料、几何和局部参数均为工程假设，不是人体测量值。
 
 当前服务器上的 CLI 是 `/data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/peripheral-ppg`。先以 `doctor --json` 检查，再运行 `simulate --config ppg_examples/engineering_example.json --output runs/unique-name`，完成后运行 `validate-run runs/unique-name`。上述各子命令均跟在 CLI 路径之后；输出目录必须不存在。配置路径解析到源文件后，配置中的求解器相对路径以配置文件目录为基准。
 

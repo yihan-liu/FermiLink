@@ -3,10 +3,11 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcx-optics"
+name = "mcx"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = ["numpy", "pmcx==0.8.1"]
 
 [project.scripts]
+mcx = "mcx_optics:main"
 mcx-optics = "mcx_optics:main"

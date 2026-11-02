@@ -231,7 +231,7 @@ def sensitivity(cfg, output):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='mcx-optics')
+    parser = argparse.ArgumentParser(prog='mcx')
     sub = parser.add_subparsers(dest='command', required=True)
     d = sub.add_parser('doctor'); d.add_argument('--json', action='store_true')
     for name in ('simulate', 'reweight', 'sensitivity'):

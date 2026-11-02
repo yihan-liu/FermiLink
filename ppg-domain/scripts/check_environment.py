@@ -12,8 +12,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 FERMILINK = Path(os.environ.get("FERMILINK_ROOT", "/data/liuyihan/FermiLink"))
 PACKAGES = {
-    "pulse-physiology": ("pulse_physiology", "pulse_knowledge", "pulse_examples", "pulse_source"),
-    "mcx-optics": ("mcx_optics", "mcx_knowledge", "mcx_examples", "mcx_source"),
+    "pulse": ("pulse_physiology", "pulse_knowledge", "pulse_examples", "pulse_source"),
+    "mcx": ("mcx_optics", "mcx_knowledge", "mcx_examples", "mcx_source"),
     "peripheral-ppg": ("peripheral_ppg", "ppg_knowledge", "ppg_examples", None),
 }
 
@@ -37,8 +37,8 @@ def main() -> int:
         "fermilink_cli": str(venv_cli) if venv_cli.exists() else None,
         "gpu": command_output(["nvidia-smi", "--query-gpu=name,driver_version,memory.total", "--format=csv,noheader"]),
         "solver_clis": {
-            "pulse-physiology": str(ROOT / ".runtime/pulse/bin/pulse-physiology") if (ROOT / ".runtime/pulse/bin/pulse-physiology").is_file() else None,
-            "mcx-optics": str(ROOT / ".runtime/mcx/venv/bin/mcx-optics") if (ROOT / ".runtime/mcx/venv/bin/mcx-optics").is_file() else None,
+            "pulse": str(ROOT / ".runtime/pulse/bin/pulse") if (ROOT / ".runtime/pulse/bin/pulse").is_file() else str(ROOT / ".runtime/pulse/bin/pulse-physiology") if (ROOT / ".runtime/pulse/bin/pulse-physiology").is_file() else None,
+            "mcx": str(ROOT / ".runtime/mcx/venv/bin/mcx") if (ROOT / ".runtime/mcx/venv/bin/mcx").is_file() else str(ROOT / ".runtime/mcx/venv/bin/mcx-optics") if (ROOT / ".runtime/mcx/venv/bin/mcx-optics").is_file() else None,
             "peripheral-ppg": str(ROOT / ".runtime/ppg-venv/bin/peripheral-ppg") if (ROOT / ".runtime/ppg-venv/bin/peripheral-ppg").is_file() else None,
         },
         "mcx_python_packages": {},
@@ -47,7 +47,7 @@ def main() -> int:
         "registry_env": os.environ.get("FERMILINK_SCIPKG_ROOT"),
     }
     if mcx_env_python.is_file():
-        for name in ("pmcx", "numpy", "mcx-optics"):
+        for name in ("pmcx", "numpy", "mcx"):
             result["mcx_python_packages"][name] = command_output([str(mcx_env_python), "-c", f"import importlib.metadata as m; print(m.version({name!r}))"])
     for package_id, (namespace, knowledge, examples, source) in PACKAGES.items():
         path = ROOT / "packages" / package_id

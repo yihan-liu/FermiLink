@@ -1,6 +1,6 @@
 # MCX 知识导航
 
-执行任务先读对应 [技能](../skills/mcx-optics/SKILL.md)；源码为 [MCX](../mcx_source/)，相关固定版本 Python 接口 [README](../mcx_source/pmcx/README.md)、[detweight](../mcx_source/pmcx/pmcx/utils.py) 和 [replay 示例](../mcx_source/pmcx/examples/demo_mcxlab_replay.py)。源码与安装的 PMCX wheel 版本不同，具体后端以每次 manifest 为准。
+执行任务先读对应 [技能](../skills/mcx/SKILL.md)；源码为 [MCX](../mcx_source/)，相关固定版本 Python 接口 [README](../mcx_source/pmcx/README.md)、[detweight](../mcx_source/pmcx/pmcx/utils.py) 和 [replay 示例](../mcx_source/pmcx/examples/demo_mcxlab_replay.py)。源码与安装的 PMCX wheel 版本不同，具体后端以每次 manifest 为准。
 
 ## 几何与观测
 

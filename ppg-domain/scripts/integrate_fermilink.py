@@ -19,12 +19,12 @@ CLI = FERMILINK_ROOT / ".venv/bin/fermilink"
 FERMILINK_PYTHON = FERMILINK_ROOT / ".venv/bin/python"
 PPG_VENV = ROOT / ".runtime" / "ppg-venv"
 PACKAGE_SPECS = (
-    ("pulse-physiology", "pulse_physiology", "pulse_knowledge", "pulse_examples"),
-    ("mcx-optics", "mcx_optics", "mcx_knowledge", "mcx_examples"),
+    ("pulse", "pulse_physiology", "pulse_knowledge", "pulse_examples"),
+    ("mcx", "mcx_optics", "mcx_knowledge", "mcx_examples"),
     ("peripheral-ppg", "peripheral_ppg", "ppg_knowledge", "ppg_examples"),
 )
 EXCLUDED_DIRS = {".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
-SOURCE_LINK_TARGETS = {"pulse-physiology": {"pulse_source": "pulse"}, "mcx-optics": {"mcx_source": "mcx"}}
+SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}}
 
 def run(args: list[str]) -> str:
     env = os.environ.copy()
@@ -143,15 +143,15 @@ def install_packages() -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.symlink_to(resolved, target_is_directory=resolved.is_dir())
     entries = {
-        "pulse-physiology": "skills,pulse_knowledge",
-        "mcx-optics": "skills,mcx_knowledge",
+        "pulse": "skills,pulse_knowledge",
+        "mcx": "skills,mcx_knowledge",
         "peripheral-ppg": "skills,ppg_knowledge,ppg_examples",
     }
     for package_id, selected in entries.items():
         run([str(CLI), "overlay", package_id, "--entries", selected])
         print(f"overlay: {package_id}: {selected}")
-    run([str(CLI), "dependencies", "peripheral-ppg", "--package", "pulse-physiology", "--package", "mcx-optics"])
-    print("dependencies: peripheral-ppg -> pulse-physiology, mcx-optics")
+    run([str(CLI), "dependencies", "peripheral-ppg", "--package", "pulse", "--package", "mcx"])
+    print("dependencies: peripheral-ppg -> pulse, mcx")
     ensure_ppg_cli()
 
 def ensure_ppg_cli() -> None:
@@ -179,7 +179,7 @@ def create_workspace() -> None:
         readme.write_text(
             "# Peripheral PPG FermiLink workspace\n\n"
             "Primary navigation: `skills/ppg-model/SKILL.md`, `ppg_knowledge/index.md`, and `ppg_examples/engineering_example.json`.\n\n"
-            "Pulse and MCX skills, knowledge indexes, and source trees are linked under `external_packages/pulse-physiology/` and `external_packages/mcx-optics/`.\n\n"
+            "Pulse and MCX skills, knowledge indexes, and source trees are linked under `external_packages/pulse/` and `external_packages/mcx/`.\n\n"
             f"Run the coupled example with `{ROOT}/.runtime/ppg-venv/bin/peripheral-ppg simulate --config {workspace}/ppg_examples/engineering_example.json --output {ROOT}/runs/workspace-coupled-demo`, then validate the new run with the same CLI's `validate-run` command.\n",
             encoding="utf-8",
         )

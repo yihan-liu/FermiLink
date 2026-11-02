@@ -6,7 +6,7 @@
 | --- | --- |
 | FermiLink | 0.3.10，commit 1677243；Python 3.12.3 |
 | Pulse | PyPulse 4.4.0，commit 5e29e5b；doctor available=true |
-| MCX | PMCX CUDA 0.8.1，mcx-optics 0.1.0；doctor available=true，两张 GPU 可见 |
+| MCX | PMCX CUDA 0.8.1，mcx 0.1.0；doctor available=true，两张 GPU 可见 |
 | PPG | peripheral-ppg 0.1.0；项目 CLI shim doctor 确认两个求解器可用 |
 | 隔离 registry | .runtime/fermilink-registry；三个包和依赖均已登记 |
 | Workspace | workspaces/fermilink-validation；PPG 主入口与 Pulse/MCX 依赖导航通过，无 collision |

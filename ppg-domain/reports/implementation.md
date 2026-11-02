@@ -1,6 +1,6 @@
 # 实施与运行
 
-三个包为 pulse-physiology、mcx-optics、peripheral-ppg。所有新增注册、脚本、配置、工作区、报告与运行结果均位于本目录。
+三个包为 pulse、mcx、peripheral-ppg。所有新增注册、脚本、配置、工作区、报告与运行结果均位于本目录。
 
 scripts/integrate_fermilink.py 显式设置 FERMILINK_SCIPKG_ROOT=.runtime/fermilink-registry；staging 排除 symlink 和生成目录，避免 FermiLink 默认 copytree 把上游源码复制进注册快照。包内 pulse_source、mcx_source 以相对链接定位 upstream，安装脚本将其解析到当前项目的真实 upstream 目录后，在隔离 registry 副本中恢复绝对链接。
 

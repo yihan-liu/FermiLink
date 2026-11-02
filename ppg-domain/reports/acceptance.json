@@ -1,17 +1,18 @@
 {
-  "run_id": "00c3e0b6-29b7-4756-9e97-604a762c05f9",
-  "timestamp_utc": "2026-11-02T10:12:11.680000+00:00",
+  "deterministic_status": "passed",
+  "run_id": "512a1048-c301-4281-aedb-421a3c79457c",
+  "timestamp_utc": "2026-11-02T11:31:52.582891+00:00",
   "mode": "full",
   "status": "blocked",
   "registry": "/data/liuyihan/FermiLink/ppg-domain/.runtime/fermilink-registry",
   "checks": [
     {
-      "name": "package:pulse-physiology",
+      "name": "package:pulse",
       "status": "passed",
       "detail": "required package structure exists"
     },
     {
-      "name": "package:mcx-optics",
+      "name": "package:mcx",
       "status": "passed",
       "detail": "required package structure exists"
     },
@@ -21,7 +22,7 @@
       "detail": "required package structure exists"
     },
     {
-      "name": "doctor:pulse-physiology",
+      "name": "doctor:pulse",
       "status": "passed",
       "detail": "doctor returned explicit available=true",
       "result": {
@@ -33,7 +34,7 @@
       }
     },
     {
-      "name": "doctor:mcx-optics",
+      "name": "doctor:mcx",
       "status": "passed",
       "detail": "doctor returned explicit available=true",
       "result": {
@@ -49,7 +50,7 @@
     {
       "name": "fermilink:setup",
       "status": "passed",
-      "detail": "registered: pulse-physiology (snapshot matches current source)\nregistered: mcx-optics (snapshot matches current source)\nregistered: peripheral-ppg (snapshot matches current source)\noverlay: pulse-physiology: skills,pulse_knowledge\noverlay: mcx-optics: skills,mcx_knowledge\noverlay: peripheral-ppg: skills,ppg_knowledge,ppg_examples\ndependencies: peripheral-ppg -> pulse-physiology, mcx-optics\nPPG CLI shim: /data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/peripheral-ppg\nrefreshing package-linked workspace: /data/liuyihan/FermiLink/ppg-domain/workspaces/fermilink-validation\nworkspace ready: /data/liuyihan/FermiLink/ppg-domain/workspaces/fermilink-validation\n{\"status\": \"ready\", \"registry\": \"/data/liuyihan/FermiLink/ppg-domain/.runtime/fermilink-registry\", \"packages\": [\"pulse-physiology\", \"mcx-optics\", \"peripheral-ppg\"]}\n"
+      "detail": "registered: pulse (snapshot matches current source)\nregistered: mcx (snapshot matches current source)\nregistered: peripheral-ppg (snapshot matches current source)\noverlay: pulse: skills,pulse_knowledge\noverlay: mcx: skills,mcx_knowledge\noverlay: peripheral-ppg: skills,ppg_knowledge,ppg_examples\ndependencies: peripheral-ppg -> pulse, mcx\nPPG CLI shim: /data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/peripheral-ppg\nrefreshing package-linked workspace: /data/liuyihan/FermiLink/ppg-domain/workspaces/fermilink-validation\nworkspace ready: /data/liuyihan/FermiLink/ppg-domain/workspaces/fermilink-validation\n{\"status\": \"ready\", \"registry\": \"/data/liuyihan/FermiLink/ppg-domain/.runtime/fermilink-registry\", \"packages\": [\"pulse\", \"mcx\", \"peripheral-ppg\"]}\n"
     },
     {
       "name": "fermilink:registry",
@@ -64,12 +65,12 @@
         "skills/ppg-model/SKILL.md",
         "ppg_knowledge/index.md",
         "ppg_examples/engineering_example.json",
-        "external_packages/pulse-physiology/pulse_knowledge/index.md",
-        "external_packages/pulse-physiology/skills/pulse-circulation/SKILL.md",
-        "external_packages/pulse-physiology/pulse_source",
-        "external_packages/mcx-optics/mcx_knowledge/index.md",
-        "external_packages/mcx-optics/skills/mcx-optics/SKILL.md",
-        "external_packages/mcx-optics/mcx_source"
+        "external_packages/pulse/pulse_knowledge/index.md",
+        "external_packages/pulse/skills/pulse-circulation/SKILL.md",
+        "external_packages/pulse/pulse_source",
+        "external_packages/mcx/mcx_knowledge/index.md",
+        "external_packages/mcx/skills/mcx/SKILL.md",
+        "external_packages/mcx/mcx_source"
       ]
     },
     {
@@ -80,8 +81,8 @@
         "package": "peripheral-ppg",
         "version": "0.1.0",
         "solvers": {
-          "pulse-physiology": {
-            "executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pulse/bin/pulse-physiology",
+          "pulse": {
+            "executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pulse/bin/pulse",
             "returncode": 0,
             "report": {
               "available": true,
@@ -91,8 +92,8 @@
               "data_root": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pulse-build/install/bin"
             }
           },
-          "mcx-optics": {
-            "executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/mcx/venv/bin/mcx-optics",
+          "mcx": {
+            "executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/mcx/venv/bin/mcx",
             "returncode": 0,
             "report": {
               "backend": "PMCX CUDA",
@@ -111,63 +112,63 @@
       "name": "pulse:baseline",
       "status": "passed",
       "detail": "real Pulse CLI run completed",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/pulse/baseline",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/pulse/baseline",
       "stdout": ""
     },
     {
       "name": "pulse:control",
       "status": "passed",
       "detail": "real Pulse CLI run completed",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/pulse/control",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/pulse/control",
       "stdout": ""
     },
     {
       "name": "pulse:intervention",
       "status": "passed",
       "detail": "real Pulse CLI run completed",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/pulse/intervention",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/pulse/intervention",
       "stdout": ""
     },
     {
       "name": "mcx:simulate:660nm",
       "status": "passed",
       "detail": "real PMCX simulation produced finite-area detector reading",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/mcx/baseline_660nm",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/mcx/baseline_660nm",
       "reading": {
-        "collected_fraction": 0.009416148854573127,
-        "standard_error": 8.597244250908123e-05,
-        "detected_count": 12458,
+        "collected_fraction": 0.009428718964738644,
+        "standard_error": 8.601882643086495e-05,
+        "detected_count": 12480,
         "launched_count": 1000000,
         "detector_area_mm2": 1.7671458676442586,
-        "reflectance_per_mm2": 0.0053284502581134275
+        "reflectance_per_mm2": 0.005335563485377611
       }
     },
     {
       "name": "mcx:simulate:940nm",
       "status": "passed",
       "detail": "real PMCX simulation produced finite-area detector reading",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/mcx/baseline_940nm",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/mcx/baseline_940nm",
       "reading": {
-        "collected_fraction": 0.008395735965453578,
-        "standard_error": 8.339208366430715e-05,
-        "detected_count": 10309,
+        "collected_fraction": 0.008381399879036312,
+        "standard_error": 8.333433248806449e-05,
+        "detected_count": 10286,
         "launched_count": 1000000,
         "detector_area_mm2": 1.7671458676442586,
-        "reflectance_per_mm2": 0.004751014683720332
+        "reflectance_per_mm2": 0.004742902118323352
       }
     },
     {
       "name": "mcx:reweight",
       "status": "passed",
       "detail": "absorption-only photon path reweight",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/mcx/reweight_660nm",
-      "detail_output": "[\n  {\n    \"name\": \"absorption_plus_10_percent\",\n    \"mua_per_mm\": [\n      0.044000000000000004,\n      0.02,\n      0.15\n    ],\n    \"collected_fraction\": 0.009265621101216563,\n    \"standard_error\": 8.468174973947874e-05\n  }\n]\n"
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/mcx/reweight_660nm",
+      "detail_output": "[\n  {\n    \"name\": \"absorption_plus_10_percent\",\n    \"mua_per_mm\": [\n      0.044000000000000004,\n      0.02,\n      0.15\n    ],\n    \"collected_fraction\": 0.009277896097826982,\n    \"standard_error\": 8.472707810983805e-05\n  }\n]\n"
     },
     {
       "name": "mcx:reweight-direct-comparison",
       "status": "passed",
-      "detail": "direct vs reweighted difference is -2.42 combined SE",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/mcx/reweight_direct_comparison.json",
+      "detail": "direct vs reweighted difference is -2.56 combined SE",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/mcx/reweight_direct_comparison.json",
       "comparison": {
         "reweighted": {
           "name": "absorption_plus_10_percent",
@@ -176,20 +177,20 @@
             0.02,
             0.15
           ],
-          "collected_fraction": 0.009265621101216563,
-          "standard_error": 8.468174973947874e-05
+          "collected_fraction": 0.009277896097826982,
+          "standard_error": 8.472707810983805e-05
         },
         "direct": {
-          "collected_fraction": 0.008977914693242673,
-          "standard_error": 8.342893828165696e-05,
-          "detected_count": 12048,
+          "collected_fraction": 0.008973327176817966,
+          "standard_error": 8.341071416949968e-05,
+          "detected_count": 12039,
           "launched_count": 1000000,
           "detector_area_mm2": 1.7671458676442586,
-          "reflectance_per_mm2": 0.005080460451864635
+          "reflectance_per_mm2": 0.005077864448609498
         },
-        "difference": -0.00028770640797388947,
-        "combined_standard_error": 0.00011887550833432527,
-        "difference_in_standard_errors": -2.4202328301700673,
+        "difference": -0.00030456892100901543,
+        "combined_standard_error": 0.00011889501673029267,
+        "difference_in_standard_errors": -2.561662627962908,
         "criterion": "absolute difference <= 4 combined standard errors"
       }
     },
@@ -197,15 +198,15 @@
       "name": "mcx:replay",
       "status": "passed",
       "detail": "real MCX photon replay Jacobian",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/mcx/replay_660nm",
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/mcx/replay_660nm",
       "detail_output": "{\n  \"jacobian_shape\": [\n    40,\n    40,\n    30,\n    1\n  ]\n}\n"
     },
     {
       "name": "peripheral-ppg:end-to-end",
       "status": "passed",
       "detail": "Pulse → 2R1C → MCX coupled run and validation",
-      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/coupled-ppg",
-      "validation": "{\n  \"valid\": true,\n  \"run_id\": \"d2453ef8-ebb3-405d-9628-49019e0228f8\",\n  \"direct_comparisons\": [\n    {\n      \"path\": \"mcx_660nm/comparison.json\",\n      \"difference_in_standard_errors\": -2.234137144568873\n    },\n    {\n      \"path\": \"mcx_940nm/comparison.json\",\n      \"difference_in_standard_errors\": 1.7294887645197554\n    }\n  ]\n}\n"
+      "output": "/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/coupled-ppg",
+      "validation": "{\n  \"valid\": true,\n  \"run_id\": \"edbb7f4e-b6e8-47a1-8380-709186bd3007\",\n  \"direct_comparisons\": [\n    {\n      \"path\": \"mcx_660nm/comparison.json\",\n      \"difference_in_standard_errors\": -2.2869120674242573\n    },\n    {\n      \"path\": \"mcx_940nm/comparison.json\",\n      \"difference_in_standard_errors\": 1.6598591943886274\n    }\n  ]\n}\n"
     },
     {
       "name": "peripheral-ppg:unit-tests",
@@ -217,7 +218,7 @@
       "name": "mcx:detector-normalization-units",
       "status": "passed",
       "detail": "Independent raw photon check of voxel path conversion, unit collected fraction, detector area in mm2 and reflectance in mm-2",
-      "output": "{\n  \"passed\": true,\n  \"run\": \"/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-181142-fffe1405/mcx/baseline_660nm\",\n  \"detected\": 12458,\n  \"launched\": 1000000,\n  \"collected_fraction\": 0.009416148854573127,\n  \"fraction_unit\": \"1\",\n  \"area_mm2\": 1.7671458676442586,\n  \"reflectance_per_mm2\": 0.0053284502581134275\n}\n"
+      "output": "{\n  \"passed\": true,\n  \"run\": \"/data/liuyihan/FermiLink/ppg-domain/runs/acceptance/20261102-193123-f9087e18/mcx/baseline_660nm\",\n  \"detected\": 12480,\n  \"launched\": 1000000,\n  \"collected_fraction\": 0.009428718964738644,\n  \"fraction_unit\": \"1\",\n  \"area_mm2\": 1.7671458676442586,\n  \"reflectance_per_mm2\": 0.005335563485377611\n}\n"
     },
     {
       "name": "ppg:pulse-step-units",
@@ -247,15 +248,14 @@
     {
       "name": "fermilink:agent-task",
       "status": "blocked",
-      "detail": "agent task not run: project-local Codex CLI codex-cli 0.166.0 is installed but not authenticated (login status: Not logged in; exit code 1; checked 2026-11-02T10:28:50+00:00; PATH is child-process only)",
+      "detail": "agent task not run: project-local Codex CLI codex-cli 0.166.0 is installed but not authenticated (login status: Not logged in; exit code 1; checked 2026-11-02T11:31:52.582853+00:00; PATH is child-process only)",
       "provider": "codex",
       "cli_executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/codex-cli/codex",
       "cli_version": "codex-cli 0.166.0",
       "login_status": "Not logged in",
       "login_returncode": 1,
-      "checked_at_utc": "2026-11-02T10:28:50+00:00",
+      "checked_at_utc": "2026-11-02T11:31:52.582853+00:00",
       "path_scope": "child_process_only"
     }
-  ],
-  "deterministic_status": "passed"
+  ]
 }
