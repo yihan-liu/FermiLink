@@ -11,8 +11,8 @@ for nm, blood, matrix in [(660, 0.2, 0.02), (940, 0.12, 0.015)]:
     waves.append({"wavelength_nm": nm, "mua_blood_per_mm": blood, "mua_matrix_per_mm": matrix,
                   "mixture_label": 2, "mcx_config": optical})
 config = {
-    "pulse_executable": "../../../.runtime/pulse/bin/pulse",
-    "mcx_executable": "../../../.runtime/mcx/venv/bin/mcx",
+    "pulse_executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pulse/bin/pulse",
+    "mcx_executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/mcx/venv/bin/mcx",
     "pulse_config": {"duration_s": 10, "sample_interval_s": 0.02},
     "local": {"R_in_mmHg_s_per_mL": 1000, "R_out_mmHg_s_per_mL": 1500,
               "C_mL_per_mmHg": 0.001, "P_venous_mmHg": 5, "P_ref_mmHg": 62,

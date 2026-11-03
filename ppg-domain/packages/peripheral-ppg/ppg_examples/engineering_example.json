@@ -1,6 +1,6 @@
 {
-  "pulse_executable": "../../../.runtime/pulse/bin/pulse",
-  "mcx_executable": "../../../.runtime/mcx/venv/bin/mcx",
+  "pulse_executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pulse/bin/pulse",
+  "mcx_executable": "/data/liuyihan/FermiLink/ppg-domain/.runtime/mcx/venv/bin/mcx",
   "pulse_config": {
     "duration_s": 10,
     "sample_interval_s": 0.02
