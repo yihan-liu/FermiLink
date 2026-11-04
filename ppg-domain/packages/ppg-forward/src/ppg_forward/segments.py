@@ -165,9 +165,14 @@ def _read_window(path, start_s, end_s, *, tracks_wanted=TRACKS, raw_access_callb
                 name, _, fmt, rate, gain, offset = trk
                 dtype = np.dtype(_DTYPES[fmt])
                 rel = epoch - origin
-                # Integer indices select only native samples in the allowed interval.
-                lo = max(0, int(np.ceil((start_s - rel) * rate - 1e-6)))
-                hi = min(count, int(np.ceil((end_s - rel) * rate - 1e-6)))
+                # Use the same native index for source bounds and destination.
+                # A fractional packet phase must not round the first valid sample
+                # into destination 1 after ceil already selected the source slice.
+                window_first = int(np.ceil((start_s - rel) * rate))
+                lo = max(0, window_first)
+                dst = lo - window_first
+                hi = min(count, int(np.ceil((end_s - rel) * rate)),
+                         lo + len(arrays[name]) - dst)
                 if hi <= lo:
                     _skip(stream, size - pos)
                     continue
@@ -176,7 +181,6 @@ def _read_window(path, start_s, end_s, *, tracks_wanted=TRACKS, raw_access_callb
                 values = np.frombuffer(raw, dtype=dtype).astype(float)
                 if fmt > 2:
                     values = values * gain + offset
-                dst = int(round((rel + lo / rate - start_s) * rate))
                 arrays[name][dst:dst + len(values)] = values
                 _skip(stream, size - pos - hi * dtype.itemsize)
             else:
@@ -394,7 +398,8 @@ def early_catheter(event):
 
 def gain_step_flags(d, factor):
     """Flag extreme amplitude changes at adjacent original 10 s bins."""
-    jump = (np.abs(np.log(d.ple_amp / d.ple_amp.shift())) > np.log(factor)) & (d.t_s.diff() == 10)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        jump = (np.abs(np.log(d.ple_amp / d.ple_amp.shift())) > np.log(factor)) & (d.t_s.diff() == 10)
     return (jump | jump.shift(-1, fill_value=False)).fillna(False)
 
 
@@ -429,7 +434,8 @@ def calibrate_gain_step(case_bins):
         if d.empty:
             continue
         valid = d.quality_ok & d.quality_ok.shift(fill_value=False) & (d.t_s.diff() == 10)
-        delta = np.abs(np.log(d.ple_amp / d.ple_amp.shift()))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            delta = np.abs(np.log(d.ple_amp / d.ple_amp.shift()))
         values.extend(delta.loc[valid & np.isfinite(delta)].tolist())
     if not values:
         raise ValueError("Train gain calibration requires valid adjacent 10s quality-bin pairs")

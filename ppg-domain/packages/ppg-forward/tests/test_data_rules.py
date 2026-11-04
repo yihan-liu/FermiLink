@@ -202,3 +202,35 @@ def test_selector_calibrates_pool_caps_before_raw_verify_and_writes_metadata(tmp
     assert meta["gain_step_factor"] == 1.5 and len(meta["availability"]) == 3
     assert {p.name for p in out.iterdir()} == {"selection.json", "cases.csv", "windows.csv"}
     assert len(result["consulted_scan_paths"]) == 6
+
+
+@pytest.mark.parametrize("phase_s", [.0015, .0004, -.0004])
+def test_native_window_fractional_packet_phase_stays_inside_bounds(tmp_path, monkeypatch, phase_s):
+    """Ceil source slices and their destination share one native sample index."""
+    path = tmp_path / "synthetic-native.vital"
+    origin, start, end, rate = 1700000000., 2120., 2150., 500.
+    epoch = origin + start - 10. + phase_s
+    relative = epoch - origin
+    source = np.arange(30000, dtype="<f4")
+    first = int(np.ceil((start - relative) * rate))
+    last = int(np.ceil((end - relative) * rate))
+    assert last - first == 15000
+    header = bytes(10) + struct.pack("<d", origin) + bytes(8)
+    device = _packet(9, struct.pack("<I", 1) + _string("SNUADC") + _string("SNUADC"))
+    record = _packet(1, struct.pack("<HdHI", 10, epoch, 1, len(source)) + source.tobytes())
+    data = b"VITA" + bytes(4) + struct.pack("<H", len(header)) + header
+    data += device + _track(1, "ART", 1) + record
+    with gzip.open(path, "wb") as stream:
+        stream.write(data)
+    decode = np.frombuffer
+    decoded = []
+    def inside_only(raw, **kwargs):
+        values = decode(raw, **kwargs)
+        sample_times = relative + values.astype(float) / rate
+        assert np.all(sample_times >= start) and np.all(sample_times < end)
+        decoded.append(len(values))
+        return values
+    monkeypatch.setattr(np, "frombuffer", inside_only)
+    result = s._read_window(path, start, end, tracks_wanted=("SNUADC/ART",), caseid=11)
+    assert decoded == [15000]
+    np.testing.assert_array_equal(result["SNUADC/ART"], source[first:last])
