@@ -23,7 +23,7 @@
   "wavelengths": [
     {
       "wavelength_nm": 660,
-      "mua_blood_per_mm": 0.2,
+      "mua_blood_per_mm": 0.2023,
       "mua_matrix_per_mm": 0.02,
       "mixture_label": 2,
       "mcx_config": {
@@ -75,7 +75,7 @@
             1.4
           ],
           [
-            0.15,
+            0.2023,
             10,
             0.98,
             1.4
@@ -115,7 +115,7 @@
     },
     {
       "wavelength_nm": 940,
-      "mua_blood_per_mm": 0.12,
+      "mua_blood_per_mm": 0.6445,
       "mua_matrix_per_mm": 0.015,
       "mixture_label": 2,
       "mcx_config": {
@@ -167,7 +167,7 @@
             1.4
           ],
           [
-            0.08,
+            0.6445,
             9,
             0.98,
             1.4

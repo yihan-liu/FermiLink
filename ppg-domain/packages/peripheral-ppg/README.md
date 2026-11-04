@@ -4,7 +4,7 @@
 
 配置生成：`python packages/peripheral-ppg/ppg_examples/make_example.py`（从 ppg-domain 根目录）。随后运行 `peripheral-ppg simulate --config packages/peripheral-ppg/ppg_examples/engineering_example.json --output runs/example-unique`，最后 `peripheral-ppg validate-run runs/example-unique`。输出目录必须不存在。配置中的求解器可执行文件路径相对于配置文件；绝对路径亦可。`state_file` 同样相对配置路径解析。示例为工程参数，不是测量值，且固定血管结构没有随相同血液量变化而改变。
 
-配置包括 Pulse 配置、局部 2R1C 所有初始/参考量、混合区体积、分析过渡时长和至少两个波长的 MCX 配置。每个波长独立运行基准 MCX；通过保留的探测光程仅改变混合区域的吸收系数，然后对相对于基准变化最大的时点运行独立随机种子的直接 MCX；比较与组合标准误写入 `comparison.json`。`validate-run` 检查主要文件及直接比较，差异超过四个组合标准误时报告未通过，应结合光子数和采样误差排查。此阈值是工程检查，不是生理验证。
+配置包括 Pulse 配置、局部 2R1C 所有初始/参考量、混合区体积、分析过渡时长和至少两个波长的 MCX 配置。每个波长独立运行基准 MCX；通过保留的探测光程仅改变混合区域的吸收系数，然后在血液分数 f_b_ref+0.2 处运行独立随机种子的直接 MCX（脉动引起的变化远小于 MCX 标准误，无法直接核对）；比较、组合标准误、该处重加权效应和波形峰峰值相对标准误的倍数写入 `comparison.json`。`validate-run` 检查主要文件及直接比较：差异超过四个组合标准误，或被检效应不足五个组合标准误时报告未通过。此阈值是工程检查，不是生理验证。
 
 输出 `coupled.csv` 保留原始时间、输入压力、局部 P/Q/V、血液分数、混合吸收和每波长光子检测功率分数及采样误差。初始过渡之后的 AC（峰峰值）、DC（算术均值）和 AC/DC 位于 `analysis.json`；未施加电子滤波或符号反转。所有 Pulse、MCX 子运行及日志保留在运行目录，真实求解器执行产生的是模拟数据。
 

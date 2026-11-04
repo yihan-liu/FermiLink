@@ -92,6 +92,13 @@ def simulate(config_path, output):
         raise
 
 
+# Blood-fraction offset for the direct check. The pulsatile change is far below
+# the MCX standard error, so the check uses a perturbation large enough to resolve.
+CHECK_DELTA_F_B = 0.2
+# Minimum reweighted effect, in combined standard errors, for the check to count.
+CHECK_MIN_EFFECT_SE = 5
+
+
 def run_wave(out, cfg, wave, rows):
     """Run a wavelength-specific MCX baseline, reweight, then direct-check."""
     wavelength = int(wave["wavelength_nm"])
@@ -114,6 +121,12 @@ def run_wave(out, cfg, wave, rows):
         target = [float(p[0]) for p in props[1:]]
         target[label-1] = mua
         cases.append({"name": f"t{i}", "mua_per_mm": target})
+    check_f_b = float(cfg["mixture"]["f_b_ref"]) + CHECK_DELTA_F_B
+    if not 0 <= check_f_b <= 1:
+        raise ValueError("f_b_ref + CHECK_DELTA_F_B must lie in [0,1]")
+    check = [float(p[0]) for p in props[1:]]
+    check[label-1] = absorption(check_f_b, blood, matrix)
+    cases.append({"name": "check", "mua_per_mm": check})
     dump(root/"reweight_config.json", {"baseline": str(root/"baseline"), "cases": cases})
     run_command([executable, "reweight", "--config", root/"reweight_config.json", "--output", root/"reweighted"], root/"reweight.log")
     readings = json.loads((root/"reweighted"/"readings.json").read_text(encoding="utf-8"))
@@ -122,19 +135,23 @@ def run_wave(out, cfg, wave, rows):
         reading = by_name[f"t{i}"]
         row[f"detected_fraction_{wavelength}nm"] = reading["collected_fraction"]
         row[f"detected_se_{wavelength}nm"] = reading["standard_error"]
-    index = max(range(len(rows)), key=lambda i: abs(rows[i]["f_b"] - cfg["mixture"]["f_b_ref"]))
     direct = json.loads(json.dumps(optical))
-    direct["optical_properties"][label][0] = cases[index]["mua_per_mm"][label-1]
+    direct["optical_properties"][label][0] = check[label-1]
     direct["seed"] = int(optical.get("seed", 1)) + 1
     dump(root/"direct_config.json", direct)
     run_command([executable, "simulate", "--config", root/"direct_config.json", "--output", root/"direct"], root/"direct.log")
     direct_read = json.loads((root/"direct"/"reading.json").read_text(encoding="utf-8"))
-    rw = by_name[f"t{index}"]
+    base_read = json.loads((root/"baseline"/"reading.json").read_text(encoding="utf-8"))
+    rw = by_name["check"]
     error = math.hypot(float(direct_read["standard_error"]), float(rw["standard_error"]))
     difference = float(direct_read["collected_fraction"]) - float(rw["collected_fraction"])
-    dump(root/"comparison.json", {"time_s": rows[index]["time_s"], "direct": direct_read,
-         "reweighted": rw, "difference": difference, "combined_standard_error": error,
-         "difference_in_standard_errors": difference/error if error else None})
+    effect = float(rw["collected_fraction"]) - float(base_read["collected_fraction"])
+    waveform = [by_name[f"t{i}"]["collected_fraction"] for i in range(len(rows))]
+    dump(root/"comparison.json", {"check_f_b": check_f_b, "direct": direct_read, "reweighted": rw,
+         "difference": difference, "combined_standard_error": error,
+         "difference_in_standard_errors": difference/error if error else None,
+         "effect_in_standard_errors": effect/error if error else None,
+         "waveform_range_in_standard_errors": (max(waveform)-min(waveform))/float(base_read["standard_error"])})
 
 
 def validate_run(path):
@@ -154,9 +171,12 @@ def validate_run(path):
         if name.endswith("comparison.json"):
             check = json.loads((root/name).read_text(encoding="utf-8"))
             z = check["difference_in_standard_errors"]
-            comparisons.append({"path": name, "difference_in_standard_errors": z})
+            effect = check.get("effect_in_standard_errors")
+            comparisons.append({"path": name, "difference_in_standard_errors": z, "effect_in_standard_errors": effect})
             if z is None or not math.isfinite(z) or abs(z) > 4:
                 raise ValueError(f"direct/reweighted agreement is unresolved at {name} (difference/SE={z})")
+            if effect is None or not math.isfinite(effect) or abs(effect) < CHECK_MIN_EFFECT_SE:
+                raise ValueError(f"direct check cannot resolve the tested absorption change at {name} (effect/SE={effect})")
     return {"valid": True, "run_id": m["run_id"], "direct_comparisons": comparisons}
 
 

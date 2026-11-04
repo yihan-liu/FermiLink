@@ -6,7 +6,7 @@
 
 当前服务器上的 CLI 是 `/data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/peripheral-ppg`。先以 `doctor --json` 检查，再运行 `simulate --config ppg_examples/engineering_example.json --output runs/unique-name`，完成后运行 `validate-run runs/unique-name`。上述各子命令均跟在 CLI 路径之后；输出目录必须不存在。配置路径解析到源文件后，配置中的求解器相对路径以配置文件目录为基准。
 
-`coupled.csv` 包含 Pulse 压力、局部 P/Q/V、血液分数、混合吸收和每波长探测功率分数；`analysis.json` 使用分析区间的峰峰值、均值和它们的比。每个波长目录中的 `comparison.json` 比较重加权与独立种子直接计算并记录组合标准误。所有输出都是模拟数据。可用 `/data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/python ppg_examples/record_example.py runs/unique-name records/example.json` 创建条件性研究记录；该脚本核验运行产物引用。
+`coupled.csv` 包含 Pulse 压力、局部 P/Q/V、血液分数、混合吸收和每波长探测功率分数；`analysis.json` 使用分析区间的峰峰值、均值和它们的比。每个波长目录中的 `comparison.json` 在 f_b_ref+0.2 处比较重加权与独立种子直接计算，记录组合标准误、被检效应和波形峰峰值相对标准误的倍数。示例的血液吸收按 Hb 150 g/L、SaO2 0.98 由 HbO2/Hb 摩尔消光系数计算，血管与混合区使用同一血液吸收。所有输出都是模拟数据。可用 `/data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/python ppg_examples/record_example.py runs/unique-name records/example.json` 创建条件性研究记录；该脚本核验运行产物引用。
 
 ## 空间与方程
 
