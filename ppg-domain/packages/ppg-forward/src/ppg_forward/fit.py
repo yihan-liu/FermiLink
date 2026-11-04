@@ -120,7 +120,19 @@ def fit_case(windows, model, operator_params, *, branch="uncorrected",
             rows.append((gain*prediction[mask]+offset-w.pleth[mask])/scale)
         return np.concatenate(rows)/np.sqrt(len(windows))
 
-    result = least_squares(residual, np.clip(x0, lo+1e-9, hi-1e-9),
+    x0 = np.clip(x0, lo+1e-9, hi-1e-9)
+    best_start = x0
+    best_loss = float(np.sum(residual(x0)**2))
+    # Fixed PTT seeds escape the flat residual when positive gain clips at zero.
+    n_ptt = int(np.ceil((hi[-1]-lo[-1])*windows[0].fs_hz))+1
+    for ptt in np.linspace(lo[-1], hi[-1], n_ptt):
+        candidate = x0.copy()
+        candidate[-1] = np.clip(ptt, lo[-1]+1e-9, hi[-1]-1e-9)
+        loss = float(np.sum(residual(candidate)**2))
+        if loss < best_loss:
+            best_start, best_loss = candidate, loss
+
+    result = least_squares(residual, best_start,
                            bounds=(lo, hi), x_scale="jac", max_nfev=max_nfev,
                            ftol=1e-7, xtol=1e-7, gtol=1e-7)
     physiological, ptt, fitted_operator = unpack(result.x)
