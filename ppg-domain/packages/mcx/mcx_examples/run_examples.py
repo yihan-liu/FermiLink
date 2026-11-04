@@ -15,8 +15,8 @@ cfg940 = json.loads((here / 'skin_vessel_940.json').read_text())
 run_simulation(cfg, out/'baseline660')
 run_simulation(cfg940, out/'baseline940')
 rw = {'baseline': str(out/'baseline660'), 'cases': [
-    {'name': 'baseline', 'mua_per_mm': [0.04, 0.02, 0.15]},
-    {'name': 'increased_absorption', 'mua_per_mm': [0.04, 0.03, 0.15]}]}
+    {'name': 'baseline', 'mua_per_mm': [0.04, 0.02, 0.2023]},
+    {'name': 'increased_absorption', 'mua_per_mm': [0.04, 0.03, 0.2023]}]}
 readings = reweight(rw, out/'reweight')
 sensitivity({'baseline': str(out/'baseline660')}, out/'replay')
 direct = copy.deepcopy(cfg)

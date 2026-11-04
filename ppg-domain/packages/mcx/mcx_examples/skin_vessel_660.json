@@ -5,7 +5,7 @@
     "layers": [{"z_start": 0, "z_end": 4, "label": 1}, {"z_start": 4, "z_end": 30, "label": 2}],
     "vessel": {"center_yz_voxels": [20, 12], "radius_voxels": 3, "label": 3}
   },
-  "optical_properties": [[0, 0, 1, 1], [0.04, 8, 0.9, 1.4], [0.02, 6, 0.9, 1.4], [0.15, 10, 0.98, 1.4]],
+  "optical_properties": [[0, 0, 1, 1], [0.04, 8, 0.9, 1.4], [0.02, 6, 0.9, 1.4], [0.2023, 10, 0.98, 1.4]],
   "source": {"position_voxels": [20, 20, 0], "direction": [0, 0, 1]},
   "detector": {"position_voxels": [28, 20, 0], "radius_voxels": 3},
   "nphoton": 1000000,
