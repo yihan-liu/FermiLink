@@ -1,0 +1,130 @@
+[
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 8.0,
+    "order": 1,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 8.0,
+    "order": 1,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 8.0,
+    "order": 2,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 8.0,
+    "order": 2,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 15.0,
+    "order": 1,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 15.0,
+    "order": 1,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 15.0,
+    "order": 2,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.1,
+    "hi_hz": 15.0,
+    "order": 2,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 8.0,
+    "order": 1,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 8.0,
+    "order": 1,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 8.0,
+    "order": 2,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 8.0,
+    "order": 2,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 15.0,
+    "order": 1,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 15.0,
+    "order": 1,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 15.0,
+    "order": 2,
+    "sign": -1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  },
+  {
+    "lo_hz": 0.5,
+    "hi_hz": 15.0,
+    "order": 2,
+    "sign": 1,
+    "phase": "causal",
+    "device_delay_s": 0.4
+  }
+]

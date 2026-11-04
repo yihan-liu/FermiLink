@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ppg-forward"
+version = "0.1.0"
+description = "Audited ART-driven normalized fingertip PLETH forward-model experiments"
+requires-python = ">=3.11"
+dependencies = ["peripheral-ppg>=0.1.0", "mcx>=0.1.0", "numpy", "scipy", "pandas", "vitaldb"]
+
+[project.scripts]
+ppg-forward = "ppg_forward.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+test = ["pytest"]

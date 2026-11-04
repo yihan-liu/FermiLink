@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Register the three ppg-domain packages and create a dedicated FermiLink workspace."""
+"""Register the ppg-domain packages and create a dedicated FermiLink workspace."""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -22,6 +22,7 @@ PACKAGE_SPECS = (
     ("pulse", "pulse_physiology", "pulse_knowledge", "pulse_examples"),
     ("mcx", "mcx_optics", "mcx_knowledge", "mcx_examples"),
     ("peripheral-ppg", "peripheral_ppg", "ppg_knowledge", "ppg_examples"),
+    ("ppg-forward", "ppg_forward", "ppg_knowledge", "ppg_examples"),
 )
 EXCLUDED_DIRS = {".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
 SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}}
@@ -146,12 +147,15 @@ def install_packages() -> None:
         "pulse": "skills,pulse_knowledge",
         "mcx": "skills,mcx_knowledge",
         "peripheral-ppg": "skills,ppg_knowledge,ppg_examples",
+        "ppg-forward": "skills,ppg_knowledge,ppg_examples",
     }
     for package_id, selected in entries.items():
         run([str(CLI), "overlay", package_id, "--entries", selected])
         print(f"overlay: {package_id}: {selected}")
     run([str(CLI), "dependencies", "peripheral-ppg", "--package", "pulse", "--package", "mcx"])
     print("dependencies: peripheral-ppg -> pulse, mcx")
+    run([str(CLI), "dependencies", "ppg-forward", "--package", "peripheral-ppg", "--package", "mcx"])
+    print("dependencies: ppg-forward -> peripheral-ppg, mcx")
     ensure_ppg_cli()
 
 def ensure_ppg_cli() -> None:
@@ -167,6 +171,18 @@ def ensure_ppg_cli() -> None:
     )
     executable.chmod(0o755)
     print(f"PPG CLI shim: {executable}")
+    forward_python = Path(os.environ.get("PPG_FORWARD_PYTHON", str(python))).resolve()
+    if not forward_python.is_file():
+        raise RuntimeError(f"PPG_FORWARD_PYTHON is unavailable: {forward_python}")
+    forward = PPG_VENV / "bin" / "ppg-forward"
+    sources = [ROOT / "packages" / name / "src" for name in ("ppg-forward", "peripheral-ppg", "mcx")]
+    forward.write_text(
+        f"#!{forward_python}\nimport os, runpy, sys\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\nsys.dont_write_bytecode=True\nsys.path[:0]={list(map(str,sources))!r}\nrunpy.run_module('ppg_forward.cli', run_name='__main__')\n",
+        encoding="utf-8",
+    )
+    forward.chmod(0o755)
+    print(f"PPG forward CLI shim: {forward} (interpreter {forward_python})")
+
 
 def create_workspace() -> None:
     workspace = ROOT / "workspaces" / "fermilink-validation"
