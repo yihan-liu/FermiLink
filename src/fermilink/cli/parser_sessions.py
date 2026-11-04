@@ -79,6 +79,12 @@ def register_exec_loop_parsers(
         action="store_true",
         help="Fail instead of auto-initializing when git repository is missing.",
     )
+    exec_parser.add_argument(
+        "--no-completion-commit",
+        dest="_fermilink_disable_completion_commit",
+        action="store_true",
+        help="Skip the automatic completion checkpoint commit.",
+    )
     exec_parser.set_defaults(func=cmd_exec)
 
     loop_parser = subparsers.add_parser(
@@ -165,6 +171,12 @@ def register_exec_loop_parsers(
         "--no-init-git",
         action="store_true",
         help="Fail instead of auto-initializing when git repository is missing.",
+    )
+    loop_parser.add_argument(
+        "--no-completion-commit",
+        dest="_fermilink_disable_completion_commit",
+        action="store_true",
+        help="Skip the automatic completion checkpoint commit.",
     )
     loop_parser.set_defaults(func=cmd_loop)
 
