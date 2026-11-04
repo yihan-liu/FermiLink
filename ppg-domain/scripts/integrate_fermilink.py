@@ -171,7 +171,7 @@ def ensure_ppg_cli() -> None:
     )
     executable.chmod(0o755)
     print(f"PPG CLI shim: {executable}")
-    forward_python = Path(os.environ.get("PPG_FORWARD_PYTHON", str(python))).resolve()
+    forward_python = Path(os.environ.get("PPG_FORWARD_PYTHON", str(python))).absolute()
     if not forward_python.is_file():
         raise RuntimeError(f"PPG_FORWARD_PYTHON is unavailable: {forward_python}")
     forward = PPG_VENV / "bin" / "ppg-forward"
