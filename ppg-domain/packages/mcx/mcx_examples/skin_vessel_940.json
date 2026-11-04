@@ -1,19 +1,19 @@
 {
   "geometry": {
-    "shape_voxels": [40, 40, 30],
+    "shape_voxels": [48, 48, 40],
     "voxel_mm": 0.25,
-    "layers": [{"z_start": 0, "z_end": 4, "label": 1}, {"z_start": 4, "z_end": 30, "label": 2}],
-    "vessel": {"center_yz_voxels": [20, 12], "radius_voxels": 3, "label": 3}
+    "layers": [{"z_start": 0, "z_end": 4, "label": 1}, {"z_start": 4, "z_end": 36, "label": 2}, {"z_start": 36, "z_end": 40, "label": 1}],
+    "vessel": {"center_yz_voxels": [24, 20], "radius_voxels": 3, "label": 3}
   },
   "optical_properties": [[0, 0, 1, 1], [0.03, 7, 0.9, 1.4], [0.015, 5, 0.9, 1.4], [0.6445, 9, 0.98, 1.4]],
-  "source": {"position_voxels": [20, 20, 0], "direction": [0, 0, 1]},
-  "detector": {"position_voxels": [28, 20, 0], "radius_voxels": 3},
-  "nphoton": 1000000,
-  "maxdetphoton": 1000000,
+  "source": {"position_voxels": [24, 24, 0], "direction": [0, 0, 1]},
+  "detector": {"position_voxels": [24, 24, 39.99], "radius_voxels": 8},
+  "nphoton": 10000000,
+  "maxdetphoton": 2000000,
   "seed": 20261103,
   "gpuid": 1,
-  "time_window_s": 5e-9,
+  "time_window_s": 1e-8,
   "wavelength_nm": 940,
   "parameter_source": "engineering_assumption_not_measured",
-  "assumptions": ["Static voxelized layers and cylindrical vessel; optical coefficients are illustrative assumptions, not measured tissue values."]
+  "assumptions": ["Transmission geometry (10 mm slab, source on top, 4 mm detector on the opposite face); static voxelized layers and cylindrical vessel; optical coefficients are illustrative assumptions, not measured tissue values."]
 }
