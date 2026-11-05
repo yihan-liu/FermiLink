@@ -78,6 +78,30 @@ function solve!(n::Network, dt::Float64, current_time::Float64)::Nothing
     @inbounds for k in eachindex(n.topo_order)
         muscl!(n.vessels_vec[Int(n.topo_order[k])], dt, n.blood)
     end
+    # Project instantaneous endpoint states after both operators. dt=0 keeps
+    # Windkessel capacitor pressure unchanged; no second dynamic update occurs.
+    fill!(n.anastomosis_solved,false)
+    for k in eachindex(n.topo_order)
+        _apply_junctions!(n,Int(n.topo_order[k]),current_time+dt,0.)
+    end
+    # Measure the actual projected full-step states, not only Newton residuals.
+    for eid in eachindex(n.vessels_vec)
+        nc=n.child_count[eid]
+        nc==0 && continue
+        c1=Int(n.child_eids[eid][1])
+        n.parent_count[c1]>1 && eid!=maximum(n.parent_eids[c1]) && continue
+        flows=Float64[n.vessels_vec[eid].Q[end]]
+        signs=Float64[1.]
+        if n.parent_count[c1]>1
+            other=filter(p->p!=eid,n.parent_eids[c1])[1]
+            push!(flows,n.vessels_vec[Int(other)].Q[end]); push!(signs,1.)
+        end
+        for c in n.child_eids[eid][1:nc]
+            push!(flows,n.vessels_vec[Int(c)].Q[1]); push!(signs,-1.)
+        end
+        rel=abs(sum(signs.*flows))/max(sum(abs.(flows)),eps())
+        n.junction_mass_error[1]=max(n.junction_mass_error[1],rel)
+    end
     for v in n.vessels_vec
         for i in eachindex(v.A)
             v.adot[i] = (v.A[i]-v.adot[i])/dt

@@ -23,8 +23,9 @@ PACKAGE_SPECS = (
     ("mcx", "mcx_optics", "mcx_knowledge", "mcx_examples"),
     ("peripheral-ppg", "peripheral_ppg", "ppg_knowledge", "ppg_examples"),
     ("ppg-forward", "ppg_forward", "ppg_knowledge", "ppg_examples"),
+    ("arterial-1d", "arterial_1d", "ppg_knowledge", "ppg_examples"),
 )
-EXCLUDED_DIRS = {".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
+EXCLUDED_DIRS = {".checks", ".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
 SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}}
 
 def run(args: list[str]) -> str:
@@ -148,6 +149,7 @@ def install_packages() -> None:
         "mcx": "skills,mcx_knowledge",
         "peripheral-ppg": "skills,ppg_knowledge,ppg_examples",
         "ppg-forward": "skills,ppg_knowledge,ppg_examples",
+        "arterial-1d": "skills,ppg_knowledge,ppg_examples",
     }
     for package_id, selected in entries.items():
         run([str(CLI), "overlay", package_id, "--entries", selected])
@@ -156,6 +158,8 @@ def install_packages() -> None:
     print("dependencies: peripheral-ppg -> pulse, mcx")
     run([str(CLI), "dependencies", "ppg-forward", "--package", "peripheral-ppg", "--package", "mcx"])
     print("dependencies: ppg-forward -> peripheral-ppg, mcx")
+    run([str(CLI), "dependencies", "arterial-1d", "--package", "ppg-forward"])
+    print("dependencies: arterial-1d -> ppg-forward")
     ensure_ppg_cli()
 
 def ensure_ppg_cli() -> None:
@@ -175,13 +179,21 @@ def ensure_ppg_cli() -> None:
     if not forward_python.is_file():
         raise RuntimeError(f"PPG_FORWARD_PYTHON is unavailable: {forward_python}")
     forward = PPG_VENV / "bin" / "ppg-forward"
-    sources = [ROOT / "packages" / name / "src" for name in ("ppg-forward", "peripheral-ppg", "mcx")]
+    sources = [ROOT / "packages" / name / "src" for name in ("ppg-forward", "arterial-1d", "peripheral-ppg", "mcx")]
+    sources.insert(0, ROOT / ".runtime" / "round3-python")
     forward.write_text(
         f"#!{forward_python}\nimport os, runpy, sys\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\nsys.dont_write_bytecode=True\nsys.path[:0]={list(map(str,sources))!r}\nrunpy.run_module('ppg_forward.cli', run_name='__main__')\n",
         encoding="utf-8",
     )
     forward.chmod(0o755)
     print(f"PPG forward CLI shim: {forward} (interpreter {forward_python})")
+    arterial = PPG_VENV / "bin" / "arterial-1d"
+    arterial.write_text(
+        f"#!{forward_python}\nimport os, runpy, sys\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\nsys.dont_write_bytecode=True\nsys.path[:0]={list(map(str,sources))!r}\nrunpy.run_module('arterial_1d.cli', run_name='__main__')\n",
+        encoding="utf-8",
+    )
+    arterial.chmod(0o755)
+    print(f"Arterial CLI shim: {arterial} (interpreter {forward_python})")
 
 
 def create_workspace() -> None:

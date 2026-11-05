@@ -1,0 +1,35 @@
+{
+  "baseline": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pwdb-round3/baseline-subject-0001.json",
+  "phase_wls_weights": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "tolerances": {
+    "quantities": {
+      "P": {
+        "nrmse": 0.05,
+        "mean_relative_error": 0.02,
+        "harmonic1_equivalent_timing_error_ms": 5.0
+      },
+      "Q": {
+        "nrmse": 0.05,
+        "mean_error_over_range": 0.05,
+        "harmonic1_equivalent_timing_error_ms": 5.0
+      },
+      "A": {
+        "nrmse": 0.05,
+        "mean_relative_error": 0.02,
+        "harmonic1_equivalent_timing_error_ms": 5.0
+      }
+    },
+    "aggregate": {
+      "transfer_delay_error_s": 0.002,
+      "transfer_group_delay_error_s": 0.002,
+      "refinement_delay_change_s": 0.001,
+      "junction_mass_relative_error": 1e-06,
+      "refinement_group_delay_change_s": 0.001,
+      "refinement_h2_ratio_relative_change": 0.01
+    }
+  }
+}

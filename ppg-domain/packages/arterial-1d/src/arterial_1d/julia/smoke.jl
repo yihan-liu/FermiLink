@@ -38,6 +38,17 @@ end
         for _=1:4
             dt=AP.calculateΔt(network)
             AP.solve!(network,dt,t); t+=dt
+            parent,c1,c2=network.vessels_vec
+            qs=[parent.Q[end],c1.Q[1],c2.Q[1]]
+            @test abs(qs[1]-qs[2]-qs[3])/max(sum(abs.(qs)),eps())<1e-8
+            hs=[AP.pressure(v.A[i],v.laws[i+1])+.5blood.rho*v.u[i]^2 for (v,i) in ((parent,parent.M),(c1,1),(c2,1))]
+            @test maximum(hs)-minimum(hs)<1e-4
+            for v in (c1,c2)
+                @test abs(AP.pressure(v.A[end],v.laws[end-1])-v.Pc-v.R1*v.Q[end])<1e-4
+                pc=v.Pc
+                AP.outbc!(v,0.,blood.rho)
+                @test v.Pc==pc
+            end
         end
         @test all(all(isfinite,v.P) && all(v.A.>0) for v in network.vessels_vec)
     end

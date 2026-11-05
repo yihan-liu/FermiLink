@@ -14,6 +14,8 @@ Modules expose `predict(art, params)`, `PARAM_BOUNDS`, `PARAM_PRIORS` and `DEFAU
 - **M3:** `peripheral_ppg.model.local_model`, with fixed Rin/Rout and fitted `tau=C*(Rin||Rout)` in seconds; output volume is mL before nuisance gain.
 - **M4:** tapered radial-to-digital line, `dP/dx=-(R+i*w*L)Q`, `dQ/dx=-i*w*C*P`; `R=8*pi*mu/A^2`, `L=rho/A`, `C=A/(rho*c^2)`. Terminal `Zbed=Rbed/(1+i*w*tau)`. Geometry uses metres, density kg/m^3, viscosity Pa*s and pressure Pa; convert ART mmHg before computing fractional area.
 
+M4 accepts paired `operating_map_mmHg` and `reference_map_mmHg` inputs. With pressure difference converted to Pa, `q=1+(M-Mref)/(2*rho*c0^2)`, `r=rref*q`, `A=Aref*q^2`, and `c=c0*sqrt(q)`, requiring q>0. The whole line uses one prescribed mean pressure. Baseline absolute bed resistance is `Rb0=ratio*rho*c0/Aref_prox` and capacitance is `Cb0=tau0/Rb0`. Prescribed `resistance_scale` multiplies Rb and tau while keeping Cb fixed; pressure-dependent c/A do not redefine that load. Without prescribed pressure inputs, geometry and c retain their configured reference values.
+
 Use the model module's declared bounds when constructing a fit configuration. A fitted effective parameter's physiological interpretation requires evidence beyond waveform agreement.
 
 ## Catheter and observation operator

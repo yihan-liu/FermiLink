@@ -37,6 +37,33 @@ N_SEGMENTS = 24
 BOUNDARY_DISCARD_S = 2.0
 
 
+def _operating_scales(p):
+    """Prescribed mean-pressure and terminal-resistance scale factors.
+
+    Under a uniform mean-pressure approximation along all line segments,
+    q = 1 + (M-Mref)*133.322387415/(2*rho*c0**2), with M and Mref in mmHg.
+    Radius = rref*q, area = Aref*q**2, and wave speed = c0*sqrt(q), in SI.
+    The absolute reference bed is Rb0 = ratio*rho*c0/Aref_prox and
+    Cb0 = tau0/Rb0; resistance_scale=s sets Rb=s*Rb0 and tau=s*tau0,
+    holding Cb=Cb0. These operating inputs are prescribed, not fitted.
+    """
+    has_map = "operating_map_mmHg" in p
+    has_reference = "reference_map_mmHg" in p
+    if has_map != has_reference:
+        raise ValueError("operating_map_mmHg and reference_map_mmHg must be provided together")
+    scale = float(p.get("resistance_scale", 1.0))
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("resistance_scale must be positive and finite")
+    q = 1.0
+    if has_map:
+        delta_pa = (float(p["operating_map_mmHg"])
+                    - float(p["reference_map_mmHg"]))*133.322387415
+        q += delta_pa/(2*RHO_KG_M3*float(p["wave_speed_m_s"])**2)
+        if not np.isfinite(q) or q <= 0:
+            raise ValueError("operating pressure must give a positive finite q")
+    return q, scale
+
+
 def transfer_function(frequency_hz, params):
     """Distal/inlet pressure transfer at nonnegative frequencies, Hz."""
     p = dict(DEFAULT_PARAMS)
@@ -48,6 +75,10 @@ def transfer_function(frequency_hz, params):
     w = 2*np.pi*f
     area0 = np.pi*INLET_RADIUS_M**2
     rbed = ratio*RHO_KG_M3*c/area0
+    q, scale = _operating_scales(p)
+    c *= np.sqrt(q)
+    rbed *= scale
+    tau *= scale
     zbed_inv = (1 + 1j*w*tau)/rbed
     m00 = np.ones(f.shape, dtype=complex)
     m01 = np.zeros(f.shape, dtype=complex)
@@ -56,6 +87,7 @@ def transfer_function(frequency_hz, params):
     dx = LENGTH_M/N_SEGMENTS
     for i in range(N_SEGMENTS):
         radius = INLET_RADIUS_M*(1+(taper-1)*(i+0.5)/N_SEGMENTS)
+        radius *= q
         area = np.pi*radius**2
         z = 8*np.pi*VISCOSITY_PA_S/area**2 + 1j*w*RHO_KG_M3/area
         y = 1j*w*area/(RHO_KG_M3*c*c)
@@ -83,4 +115,5 @@ def predict(art, params):
     if nfft % 2 == 0:
         h[-1] = h[-1].real
     pressure = irfft(rfft(xp)*h, nfft)[pad:pad+len(x)]
-    return (pressure-pressure[0])*133.322387415/(RHO_KG_M3*p["wave_speed_m_s"]**2)
+    q, _ = _operating_scales(p)
+    return (pressure-pressure[0])*133.322387415/(RHO_KG_M3*p["wave_speed_m_s"]**2*q)

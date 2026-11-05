@@ -14,7 +14,7 @@ from .manifests import dump, metadata_path, validate_run
 
 def doctor(out):
     modules = {}
-    for name in ("numpy", "scipy", "pandas", "pyarrow", "vitaldb", "peripheral_ppg", "mcx"):
+    for name in ("numpy", "scipy", "pandas", "pyarrow", "vitaldb", "peripheral_ppg", "mcx", "statsmodels"):
         try:
             importlib.import_module(name)
             modules[name] = {"available": True}
@@ -23,6 +23,9 @@ def doctor(out):
     checks = {}
     for name, module, symbol in (
         ("selection", "ppg_forward.selection_driver", "run_select"),
+        ("harmonics", "ppg_forward.tf_harmonics", "compute_tf_harmonics"),
+        ("harmonic_delay", "ppg_forward.tf_delay", "fit_delay"),
+        ("mixed_decomposition", "ppg_forward.tf_statistics", "decompose_feature"),
         ("fitting", "ppg_forward.round2_driver", "run_fit"),
         ("evaluation", "ppg_forward.round2_driver", "run_evaluate"),
         ("cross_window", "ppg_forward.round2_driver", "run_cross_window"),
@@ -57,7 +60,7 @@ def doctor(out):
             mcx_cli["error"] = str(exc)
     ready = (all(check["available"] for check in checks.values()) and mcx_cli["available"]
              and all(modules[name]["available"] for name in
-                     ("numpy", "scipy", "pandas", "pyarrow", "vitaldb", "peripheral_ppg")))
+                     ("numpy", "scipy", "pandas", "pyarrow", "vitaldb", "peripheral_ppg", "statsmodels")))
     result = {"package_version": __version__, "python": sys.executable,
               "python_version": platform.python_version(), "modules": modules,
               "capabilities": checks, "mcx_cli": mcx_cli,

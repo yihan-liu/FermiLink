@@ -1,5 +1,15 @@
 {
   "baseline": "/data/liuyihan/FermiLink/ppg-domain/.runtime/pwdb-round3/baseline-subject-0001.json",
   "wall_law": "default",
-  "nodes": ["radial", "digital"]
+  "nodes": [
+    "radial",
+    "digital"
+  ],
+  "dx_m": 0.001,
+  "cfl": 0.5,
+  "max_cycles": 30,
+  "convergence_tolerance_pa": 1.0,
+  "stiffness_scale": 1.0,
+  "resistance_scale": 1.0,
+  "inflow_scale": 1.0
 }

@@ -5,6 +5,7 @@ from pathlib import Path
 from ppg_forward.manifests import dump
 from .manifests import Run, unique_output, validate_run
 from .solver import julia, simulate
+from .sweep import sweep
 from .acceptance import compare
 
 
@@ -42,10 +43,10 @@ def main(argv=None):
             elif args.command=="acceptance":
                 for directory in (args.simulation,args.refinement):
                     run.add_inputs([Path(directory)/name for name in ("manifest.json","result.json","transfer.json","waveforms.csv","solver_input.json")])
-                result=compare(args.simulation,config["baseline"],run.out,config["tolerances"],refinement=args.refinement)
+                result=compare(args.simulation,config["baseline"],run.out,config["tolerances"],refinement=args.refinement,phase_weights=config["phase_wls_weights"])
                 result["status"]="complete" if result["pass"] else "blocked"
             else:
-                result={"status":"blocked","reason":"Target-MAP intervention awaits the owner's decision"}
+                result=sweep(config,run)
         dump(run.out/"result.json",result); run.result=result
     print(json.dumps({"out":str(run.out),**result}))
     return 2 if result.get("status")=="blocked" or result.get("valid") is False else 0

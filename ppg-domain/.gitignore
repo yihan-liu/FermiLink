@@ -12,3 +12,6 @@
 # Upstream source checkouts are fetched at pinned commits by scripts/prepare_upstream.sh
 /upstream/
 *.py[cod]
+
+# Package-local development checks
+**/.checks/
