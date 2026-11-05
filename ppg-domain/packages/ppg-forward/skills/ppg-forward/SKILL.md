@@ -1,22 +1,29 @@
 ---
 name: ppg-forward
-description: Execute audited Round 2 ART-to-fingertip-PLETH shape and timing experiments with the fixed M0-M4 ladder and owner gates.
+description: Run individual audited ART-driven waveform, selective-window, fitting, metric and optical commands.
 ---
 
-# ppg-forward executor procedure
+# Individual command procedure
 
-1. Run `python3 scripts/project.py status` in the research workspace. Read docs/PROJECT.md, the active PROTOCOL.md, DATA_USE.md and PREREG.md, then this package's ppg_knowledge/index.md. The stage prompt specifies the exact case-list file and output roots. Read only relevant files.
-2. Verify the stage and owner authorization. Pilot and batch use Train. Pilot cases are excluded from batch. Validation is permitted once, after the documented Gate 2 go, with a frozen operator. Stop at Gate 1/Gate 2 and report the requested commit/results; do not infer go from elapsed time.
-3. Copy the data rules into the stage execution record: only explicit caseids in the supplied list and allowed existing split; raw paths exclusively VitalDB_raw/vital_dev/<caseid:04d>.vital; no directory enumeration, Test, dev_reserve or vital/ access; first 80% only; no pump/drug-event PLETH; raw data read-only and in place. The event policy excludes every recorded drug-pump interval with rate > 0, plus 600 s before/after every rate change, and 60 s before/after recorded NIBP measurements. Read numeric pump tracks before PLETH; apply these exclusions before accessing PLETH scan features. Use only recorded status and report unknown coverage.
-4. Before any new raw read, append the concrete caseids, allowed time intervals and purpose to the active DATA_USE.md. Use package selection/reader commands; do not write an ad hoc VitalFile reader or load a full PLETH track. Manifests must record every raw file actually opened and each authorized interval.
-5. Run ppg-forward doctor into a new directory. Report unavailable dependencies as unavailable; do not replace real execution with synthetic output. Each command refuses existing output directories; use a new run id for a rerun.
-6. Run select-segments with the exact split and case-list files, explicit data roots/event policy and frozen selection thresholds. Use 30 s windows, Round 1 ART/PLETH quality, no gaps/flush/gain step, declared Train-derived IBI-CV cutoff, minimum 600 s spacing and 3-5 windows/case. Preserve MAP-separated pairs where available and stratify MAP/HR/candidate damping. Record unknown damping separately. Raw quality verification must remain within the approved intervals.
-7. Pilot only: fit the global causal operator with uncorrected M0 and case-balanced loss. Fit all M0-M4 with/without catheter correction using the same operator. Per case fit physiology and residual PTT; per window profile positive gain and offset. Fit at 50 Hz, evaluate timing at 500 Hz. Save global operator, fitted case parameters, window references, coverage, boundary hits and failure records.
-8. Evaluate the primary normalized, foot-aligned physical-time ensemble NMSE, odd/even noise ceiling and declared morphology features. Use cross-window for P5, retaining MAP-separated fit A/predict B pairs and independent-B diagnostic baselines. Per-case corner fits are diagnostic only. Never tune a metric or threshold after preregistration freeze.
-9. Run mcx-linear only from the supplied amended-P7 configuration. Use same-photon log-intensity absorption reweighting with fixed scattering and optical peak-to-peak/mean AC/DC up to about 5%. The 1% second-order criterion is distinct from reporting-only volume-mixed scattering sensitivity. Use real MCX for direct paired scattering arms; never edit the package or solver source.
-10. Run validate-run on every run directory. It checks hashes, allowed raw cases/source paths and first 80% boundaries. Review actual raw-open coverage, excluded/failing cases and outputs against the prompt. A failed run stays failed; rerun corrected code/prompt into a new directory. Do not patch result values by hand.
-11. Update STATE.yaml (task, jobs, accepted runs, next action/blockers), then run `python3 scripts/project.py check`. Keep projects/memory.md in English; mark outdated entries [deprecated] without a reason, and append replacements as `(updated YYYY-MM-DD: ...)` to the original entry. The loop does not commit; Codex reviews and commits outputs.
+1. Read the requested command's `--help` and the relevant equations in `ppg_knowledge/index.md`. Take the explicit input files, configuration, allowed split and output root from the calling goal.
+2. Use the registered CLI with `FERMILINK_SCIPKG_ROOT=/data/liuyihan/FermiLink/ppg-domain/.runtime/fermilink-registry`. Choose a fresh output directory. Existing directories are refused.
+3. Execute the requested command below. A dependency or input failure remains a failed/blocked result; preserve it and use a fresh directory after correction.
+4. Run `ppg-forward validate-run RUN_DIR --out FRESH_AUDIT_DIR`. Inspect status, validation errors and actual raw-access scopes. Return the command, run directory, manifest run_id, audit result and concrete missing inputs.
 
-## Protected materials
+## Command inputs
 
-Do not edit PROTOCOL.md, PREREG.md, any file under /data/liuyihan/FermiLink, or the patient split. Do not push. Stop for owner decisions at gates, before forbidden data access, before adding model variants or changing preregistered definitions, or when a prediction is untestable. Record uncertainty through concrete missing inputs, failed checks and coverage.
+- `doctor --out DIR`: inspect imports, driver availability and MCX executable help. This command runs no solver and establishes no experimental acceptance.
+- `select-segments --split CSV --cases LIST --config FILE --event-policy NAME --out DIR`: supply an explicit nonempty case list, split CSV and JSON settings. The supported event policy is `owner-20261104-drugpump-rate-nibp`; it may also be supplied in the configuration. Train is default. `--allow-splits validation` is an explicit opt-in. Select `selection_mode` and its configuration options from the calling goal.
+- `fit --segments DIR --models LIST --operator fit-global --out DIR`: supply selected-window metadata and model names. To reuse an operator use `--operator frozen:FILE`. Optional search limits and operator-candidate inputs are exposed in `--help`.
+- `evaluate --fits DIR --prereg FILE --out DIR`: supply saved fits and the criteria file. Return coverage and undefined metrics alongside scored outputs.
+- `cross-window --fits DIR --out DIR`: supply saved fit metadata; retain transferred-window and independent-window diagnostic outputs.
+- `mcx-linear --config FILE --out DIR`: supply optical geometry, photon, wavelength and sensitivity settings. Use real MCX when the configuration requests direct simulations.
+- `validate-run DIR --out AUDIT_DIR`: audit the inspected run without changing it.
+
+## Enforced data access and output audit
+
+Use package readers and explicit case/window metadata. They allow only selected Train or explicitly opted-in Validation cases from `VitalDB_raw/vital_dev/NNNN.vital`; Test, `dev_reserve`, `vital/` and windows beyond the first 80% are refused. PLETH access requires the supported recorded-event policy. Native ART/PLETH reads are limited to the approved intervals; numeric-event reads carry a separate first-80% audit scope.
+
+The manifest records actual opens, tracks and intervals. Metadata inputs and outputs are hashed; native recordings are not hashed or copied as metadata. Validation checks completion, hashes and explicit raw authorizations. Preserve generated values and report failures through the command result.
+
+The available CLI commands are listed above. Harmonic and statistical Python helpers do not expose `tf-*` CLI commands. The calling goal determines experiment order, cohorts, scientific criteria and owner decisions.

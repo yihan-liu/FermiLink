@@ -1,30 +1,40 @@
 # ppg-forward
 
-Round2 compares normalized fingertip PLETH shape and timing predicted from measured ART. The package provides the fixed M0-M4 ladder, a monitor observation operator, selective VitalDB reads, fitting, metrics and an absorption/MCX check. Codex develops and reviews the package. DeepSeek through FermiLink loop executes experiment stages in the research workspace.
+ART-driven waveform models, selective VitalDB window access, fitting, physical-time metrics, native-sample harmonic descriptors and detected-photon optical calculations.
 
-## Installation and navigation
+## Installation
 
-Register only with `PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/scripts/integrate_fermilink.py --install` from the FermiLink root. This creates the project-local CLI shim under `ppg-domain/.runtime/ppg-venv/bin/ppg-forward`. Runtime dependencies are declared in pyproject.toml; the local analysis interpreter already supplies NumPy/SciPy/pandas/VitalDB. M3 imports peripheral-ppg; optical runs use the registered mcx package and real solver.
+From the FermiLink root, register with:
 
-- `skills/ppg-forward/SKILL.md`: step-by-step executor workflow.
-- `ppg_knowledge/index.md`: equations, units, parameter bounds and interpretation.
-- `ppg_examples/`: explicit pilot/operator and MCX configurations.
-- `tests/`: synthetic numerical and data-access checks.
+```bash
+PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/scripts/integrate_fermilink.py --install
+```
+
+The CLI shim is `ppg-domain/.runtime/ppg-venv/bin/ppg-forward`. Use the project registry at `ppg-domain/.runtime/fermilink-registry`. Runtime dependencies are in `pyproject.toml`.
 
 ## Commands
 
-`doctor`, `select-segments`, `fit`, `evaluate`, `cross-window`, `mcx-linear`, and `validate-run` are exposed through `ppg-forward`. Use each command's `--help` for its exact options. Commands create a fresh output directory and refuse an existing one. Every run records a manifest with input/output SHA256 values, code version, status, times and actual raw-file opens. Raw VitalDB files are never hashed as whole-record waveform inputs; their audited access list records the allowed case and time range separately from the explicitly hashed command input files.
+| Command | Inputs and function |
+| --- | --- |
+| `doctor --out DIR` | Inspect Python dependencies, drivers and MCX executable availability; runs no solver. |
+| `select-segments --split CSV --cases LIST --config FILE --event-policy NAME --out DIR` | Select and verify explicit case windows. `--allow-splits` defaults to `train`. |
+| `fit --segments DIR --models M0,M1 --operator fit-global --out DIR` | Fit selected models and a global operator. Use `--operator frozen:FILE` to supply a saved operator. |
+| `evaluate --fits DIR --prereg FILE --out DIR` | Evaluate saved fits using the supplied criteria file. |
+| `cross-window --fits DIR --out DIR` | Compute within-case cross-window predictions and diagnostic reference fits. |
+| `mcx-linear --config FILE --out DIR` | Run the configured detected-photon optical calculation and requested direct MCX comparisons. |
+| `validate-run DIR --out AUDIT_DIR` | Audit a saved manifest, metadata hashes and raw-access scopes without changing the inspected run. |
 
-Selection accepts an explicit case-list file and the existing split CSV. Train is the default allowed split. Validation is enabled explicitly only in the owner-approved validation stage. Test, dev_reserve and vital/ paths are refused before opening. Raw records stay in place; output artifacts contain selection metadata and fitted/aggregated results, not copied native recordings.
+Use each command's `--help` for optional arguments. Selection settings are supplied in JSON: `scan_dir`, `gain_step_factor`, `ibi_cv_cutoff`, `selection_mode`, and the options consumed by that mode. Sliding mode accepts `stride_s` and `min_qualifying_time_s`; choose settings in the experiment's prompt. There are no `tf-extract`, `tf-decompose` or `tf-predict` CLI commands. Python harmonic and statistical helpers are documented in the knowledge index.
 
-## Research execution
+## Run and access rules
 
-The workspace retains PROTOCOL.md, DATA_USE.md, PREREG.md, stage prompts, results and STATE.yaml. Commit the workspace before a stage. Launch `FERMILINK_SCIPKG_ROOT=/data/liuyihan/FermiLink/ppg-domain/.runtime/fermilink-registry /data/liuyihan/FermiLink/.venv/bin/fermilink loop <prompt> --package ppg-forward --max-iterations N --no-completion-commit` in a named tmux session. Codex registers the job, reviews manifest validation, confirms the loop preserved protocol/PREREG/package source, and commits accepted outputs.
+Every command creates a fresh output directory and refuses an existing one. Its `manifest.json` records status, timestamps, code version, metadata input/output SHA256 values and actual raw opens. Raw VitalDB recordings are audited by case, track and time interval; they are not hashed or copied as command metadata.
 
-Pilot:20 stratified Train cases x3 windows. Then finalize preregistration in its own commit and stop at Gate1 for Yihan. Batch:approximately200 non-pilot Train cases x3-5 windows; freeze code/operator/model parameters and stop at Gate2. Validation:approximately150 cases, once, with frozen global parameters. MCX may run in parallel. The round protocol and dated owner amendments govern every stage.
+Readers accept explicitly listed cases in the supplied split and only `VitalDB_raw/vital_dev/NNNN.vital`. Train is the default; Validation needs explicit `--allow-splits validation`. Test, `dev_reserve` and `vital/` sources are refused. Waveform decoding is restricted to approved ART/PLETH windows inside the first 80% of the record. The reader requires the supported recorded-event policy before PLETH access; its exact policy identifier and exclusions are described by the selection input and saved metadata.
 
-## Scope
+`validate-run` requires a complete run, matching metadata hashes and valid explicit case/time/track authorizations. A doctor result describes environment checks, not an experimental result.
 
-Endpoints are normalized ensemble-beat NMSE and timing/morphology features. BP levels, SBP/DBP scoring, PPG-to-BP inversion, AC/DC fitting, per-case3D optics, wrist/ring work and new model variants are outside this round. The MCX AC/DC bound is a forward optical engineering input, separate from monitored PLETH amplitude fitting.
-
-Built on FermiLink, peripheral-ppg and MCX. Literature and modeling assumptions are documented in the knowledge index.
+- [Command procedures](skills/ppg-forward/SKILL.md)
+- [Equations and units](ppg_knowledge/index.md)
+- [Configurations](ppg_examples/)
+- [Synthetic and access checks](tests/)

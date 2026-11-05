@@ -1,47 +1,49 @@
-# Round2 forward-model knowledge
+# ART-driven waveform tools
 
-Evidence classes: implementation facts, modeling assumptions, source literature and project findings. Numerical success supports the configuration evaluated. ART-to-PLETH shape agreement does not identify unique physiology.
+## Signals and units
 
-## Signals, time and units
+ART is in mmHg, time in seconds and frequency in Hz. The selective reader decodes native 500 Hz SNUADC ART/PLETH windows and can return 50 Hz resampled inputs for fitting. PLETH amplitude is in device units. Native timing and harmonic calculations use 500 Hz inputs.
 
-ART input is mmHg; time is seconds; frequency is Hz. Native SNUADC tracks are500Hz; fit inputs are50Hz after resampling, and final timing features are500Hz. Each approved window is30s wholly inside the first80% of its record. End effects use constant extension and an analysis edge mask. Keep physical-time ensembles; do not warp beat duration to a phase axis.
+## Model equations
 
-## Model ladder and parameters
+Modules expose `predict(art, params)`, `PARAM_BOUNDS`, `PARAM_PRIORS` and `DEFAULT_PARAMS`. Bounds are effective-parameter search inputs.
 
-All modules expose predict(art,params)->dA and PARAM_BOUNDS/PARAM_PRIORS/DEFAULT_PARAMS. Priors are declared uniform engineering search bounds; fitted coordinates are effective predictive parameters.
+- **M0:** second-order lowpass times two lead/lag sections, each `(1+s/wz)/(1+s/wp)`. Frequency parameters are Hz and damping is dimensionless; the added pole/zero pairs recover M1 when equal.
+- **M1:** `H(s)=wn^2/(s^2+2*zeta*wn*s+wn^2)`, with fixed pressure-to-area scale.
+- **M2:** M1 transmission followed by `V/Vscale=1/2+atan((P-Pexternal-Pmid)/width)/pi`. Pressure coordinates and width are mmHg. Retain ART DC before this nonlinear operation.
+- **M3:** `peripheral_ppg.model.local_model`, with fixed Rin/Rout and fitted `tau=C*(Rin||Rout)` in seconds; output volume is mL before nuisance gain.
+- **M4:** tapered radial-to-digital line, `dP/dx=-(R+i*w*L)Q`, `dQ/dx=-i*w*C*P`; `R=8*pi*mu/A^2`, `L=rho/A`, `C=A/(rho*c^2)`. Terminal `Zbed=Rbed/(1+i*w*tau)`. Geometry uses metres, density kg/m^3, viscosity Pa*s and pressure Pa; convert ART mmHg before computing fractional area.
 
-- M0: second-order lowpass multiplied by two lead/lag sections H(s)=(1+s/wz)/(1+s/wp), giving4poles/2zeros. Frequency0.3-20Hz; damping0.15-3; each added pole/zero0.3-20Hz. Equal pole/zero pairs exactly recover M1.
-- M1: H(s)=wn^2/(s^2+2*zeta*wn*s+wn^2), V=C*P with fixed scale. Frequency0.3-20Hz,zeta0.15-3. Output is a scaled pressure/area proxy.
-- M2: M1 transmission followed by V/Vscale=1/2+atan((P-Pexternal-Pmid)/width)/pi. Pmid[-20,120]mmHg,width[5,120]mmHg,Pexternal=0 fixes the coordinate. Retain pressure DC before this nonlinear operation.
-- M3: import peripheral_ppg.model.local_model. FixedRin/Rout=1000/1500mmHg*s/mL; free identifiable tau=C*(Rin||Rout) in[.02,2]s. Output volume in mL is scaled by the window nuisance gain.
-- M4: linear tapered radial-to-digital frequency-domain line. dP/dx=-(R+iwL)Q, dQ/dx=-iwCP; R=8*pi*mu/A^2,L=rho/A,C=A/(rho*c^2). Terminal parallelRC Zbed=Rbed/(1+iw*tau). GeometryL=.25m,inlet radius=.0015m,rho1060kg/m3,mu=.004Pa*s;24midpoint segments with linear-radius taper. Freec[3,20]m/s,taper[.3,1],terminal resistance ratio[.5,30],bedtau[.02,1]s. Convert mmHg toPa before fractional area output.
-
-No model includes a separate free pure delay; external residual PTT owns that coordinate. M4 retains its physical propagation phase. Constant output scales are removed by normalized comparison/profiled window gain.
+Use the model module's declared bounds when constructing a fit configuration. A fitted effective parameter's physiological interpretation requires evidence beyond waveform agreement.
 
 ## Catheter and observation operator
 
-Catheter H(f)=1/(1-(f/fn)^2+2i*zeta*f/fn). Round1 successive-peak frequency is damped fd, so fn=fd/sqrt(1-zeta^2) under the underdamped second-order assumption. Candidates remain unverified until inspected using ART-only strips. Missing estimates make correction unavailable. Both branches receive W(f)=1/(1+(f/15)^8); only the corrected branch additionally receives1/H.
+Catheter response is `H(f)=1/(1-(f/fn)^2+2i*zeta*f/fn)`. For an underdamped successive-peak estimate `fd`, `fn=fd/sqrt(1-zeta^2)`. Unavailable estimates make correction unavailable. Both branches receive the common bandwidth filter; the corrected branch additionally receives the inverse catheter response.
 
-PLETH(t)=g_window*BP[sign*dA(t-device_delay-PTT_case)]+offset_window. Fit global corners/order/sign with uncorrected M0 using case-balanced pilot loss; causal phase is primary. Fix device_delay=.4s as a gauge, residualPTT[-.4,.5]s,total pure delay[0,.9]s. Per-case physiological parameters and PTT are shared across windows. Window gain is positive. Filters and device/physiological delays are operationally confounded; the components are not separately measured.
+The observation operator applies sign, filtering, positive window gain, offset and a fractional pure delay. Filter corners are Hz, delays seconds, gain positive and filter order integral. Device delay and case delay share a timing gauge; filtering phase can also absorb timing.
 
-## Fitting and metrics
+## Physical-time metrics
 
-Fit variance-normalized physical-waveform residuals with profiled positive gain/offset. Foot alignment removes pure delay, so the primary shape endpoint is reported separately. Detect feet identically in observed/predicted signals using the frozen smoothed-upstroke/local-minimum rule. Normalize each beat once, then form full/odd/even means on common physical-time support.
+`metrics.ensemble` detects local-minimum feet before systolic upstrokes. Each beat is normalized by its raw foot and full-beat peak-minus-foot amplitude. Its common physical-time support is the shortest complete reference RR. The helper returns full/odd/even means and coverage.
 
-PrimaryNMSE=sum((prediction-target)^2)/sum((target-mean(target))^2)=1-R2. Noise floor uses n1*n2/(n1+n2)^2 times odd/even squared difference divided by full-target centered sum of squares; this is1/4 for equal halves under independent exchangeable residuals. CeilingR2=1-noise_floor; report raw agreement, invalid cases and coverage. P2 requiresmodelR2>=.9*ceilingR2 and the predeclared M0 NMSE margin.
+`NMSE=sum((prediction-target)^2)/sum((target-mean(target))^2)`, and `R2=1-NMSE`. The noise floor is `n1*n2/(n1+n2)^2` times odd/even squared difference divided by the full-mean centered sum of squares. Morphology includes foot-to-peak time, notch presence/time/depth, systolic width and matched-foot delay; missing features retain undefined values.
 
-Features: foot-to-peak upstroke time, notch presence/time/depth, systolic width and delay residual. Retain missing-notch cases/coverage. P5 uses MAP-separatedpairs(abs difference>=15mmHg), fitA physiology, predictB refittinggain/offset/PTT only; degradation is transferredB NMSE minus independentB diagnostic-fit NMSE. Aggregate windows/pairs within case first.
+## Native beat-phase harmonics
 
-P6 fits low/high corners continuously per case with global order/sign/phase fixed and uncorrected M0 nuisance parameters. Boundslo[.05,1],hi[5,15]Hz; starts at frozen corners and bounds midpoint. Reporteachcornermean/sampleSD/CV,casecount,boundhits,lossesandstartdependence. This tests operational consistency, not physiological separation.
+`tf_harmonics.compute_tf_harmonics(art, pleth, fs_hz=500, foot_times=None)` is a Python API. Supplied feet are seconds from sample zero; default detection uses ART only. Complete common foot-to-next-foot beats define `u=(t-foot)/RR` for both channels.
 
-## Amended P7 optics
+For each beat, subtract its DC integral and compute `X_bk=integral_0^1 x_b(u)*exp(-2*pi*i*k*u)du`, and similarly Y, by trapezoidal integration of native samples with interpolated endpoints. No beat amplitude normalization is applied. `H_k=mean_b(Y_bk)/mean_b(X_bk)` for k=1..5. Common phase-grid means are display/audit outputs. Full and alternating odd/even estimates retain coefficients and undefined harmonics.
 
-Absorptionmix mua=f_b*mua_blood+(1-f_b)*mua_matrix. Fixed-scatter detected-photon reweighting uses baselineweights and X=sum(delta_mua_i*L_i), L inmm. ln(I1/I0)=ln(Ew exp(-X))=-EwX+.5VarwX+...; quadratic/linear=.5VarwX/abs(EwX). Exact remainder/linear=abs(ln(Ew exp(-X))+EwX)/abs(EwX). Use the same photons, stable logarithms and between-seed uncertainty. OpticalAC/DC is peak-to-peak intensity divided bymean, as in peripheral_ppg.analysis.ac_dc; up toabout5% is an engineering bound, not a DC estimate from band-pass/AGC PLETH. Baselinef_b1-10%,SpO2.90-1.00,660/940nm. Report maximum over the frozen sampled grid and the1%criterion.
+Gain ratios are `abs(H_k)/abs(H_1)`; residual phase is `psi_k=Arg(H_k*(conj(H_1)/abs(H_1))^k)`. Adjacent residual group delay is `-Delta(psi)/(2*pi*Delta(f))`, using fixed principal adjacent increments. Frequencies are `f_k=k/mean(RR)`, HR is `60/mean(RR)`. Delays are seconds and branch-aliased modulo mean RR. With variable RR, H is a beat-phase ensemble descriptor.
 
-Scattering sensitivity is reporting-only atf0=.10,SpO2=.98,multipliers1.5/2,660/940nm,10paired seeds. Volume-mix mus andg inlabel2; label3 remains canonical in every arm. BaselineB already usesf0mixedscatter;A changes absorption only;T changes absorption+scatter. Reportseedwise pairedlog changes andSE, plusabsorption-firstsignedshare(mean(logIT-logIA)/mean(logIT-logIB)). If total change's95%t9intervalcontains0, share isundefined andabsoluteincrement remains reported.
+`tf_statistics.decompose_feature` is a Python helper for case-centered MAP, HR and time regressions, mixed effects, OLS case slopes, timestamp-based Bartlett HAC errors and continuous-run residual-shift controls. Bandwidth, shift duration, repetitions and seed are explicit inputs; slopes are returned per mmHg and per bpm. These helpers have no dedicated CLI.
 
-Theoretical oxygenatedblood,Hct45% sensitivity inputs from [Bosschaart etal.,2014appendix](https://pmc.ncbi.nlm.nih.gov/articles/PMC3953607/):660nm mus92.29/mm,g.9850;940nm56.84/mm,g.9768. These are engineering assumptions atSpO2=.98. [Prahl hemoglobin spectra](https://omlc.org/spectra/hemoglobin/summary.html) supply saturation-dependent absorption; mu_a(mm^-1)=2.303*epsilon(cm^-1/M)*150(g/L)/64500(g/mol)/10.
+## Detected-photon optics
 
-## Stage decisions and exclusions
+Absorption mixing is `mu_a=f_b*mu_a_blood+(1-f_b)*mu_a_matrix`; optical paths are mm and absorption coefficients 1/mm. With fixed scattering and `X=sum_i(delta_mu_a_i*L_i)`, `ln(I1/I0)=ln(E_w exp(-X))`, its linear term is `-E_w X` and quadratic term `Var_w(X)/2`. The helpers also compute the exact remainder using the same photons. Optical AC/DC is peak-to-peak detected intensity divided by cycle mean. Device PLETH units supply no absolute optical DC calibration.
 
-P1-P7 definitions and thresholds are finalized in workspace PREREG after pilot, committed separately, then frozen. Gate1 authorizes batch; Gate2 authorizes one Validation evaluation. Round3 recommendation follows the workspace decision rules. This round covers normalized forwardshape/timing; inversion,BPlevel/SBP/DBP,amplitude/ACDC fitting,per-case3DMCX,wrist/ringmodels andunregistered modelvariants are excluded.
+See the README for enforced raw-access and manifest rules. Experiment cohorts, criteria and authorization belong in the calling goal and its input files.
+
+## Harmonic phase-slope API
+
+`tf_delay.fit_delay(H, frequencies_hz, operator, weights, harmonics)` fits `phase(H)=intercept-omega*tau` with positive supplied weights; tau is seconds. It uses the known causal operator phase to guide residual-phase unwrapping, then restores that continuous operator phase before fitting raw H. Residual adjacent harmonic phase increments are assumed to lie in (-pi, pi); diagnostics expose split-half branch differences. `freeze_harmonic_weights` estimates case-balanced odd/even phase-noise variance and returns inverse-variance weights for a saved configuration. Exact harmonic support, reference centering, feature selection and reliability criteria are inputs from the calling goal.
