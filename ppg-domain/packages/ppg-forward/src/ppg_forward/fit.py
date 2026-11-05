@@ -70,23 +70,29 @@ def _predict(window, art, module, physiological, ptt_s, operator_params):
 
 def fit_case(windows, model, operator_params, *, branch="uncorrected",
              catheter_params=None, fixed_physiology=None, initial=None,
-             max_nfev=200, _fit_corners=False):
+             max_nfev=200, _fit_corners=False, fit_fs_hz=50,
+             analysis_masks=None, evaluate=True):
     """Fit one case jointly; physiology and PTT shared, gain/offset per window.
 
     fixed_physiology fixes all model parameters for transfer-to-B, leaving
     residual PTT and profiled window gain/offset as the only adjustable values.
-    Windows must belong to one case and be sampled at 50 Hz.
+    Windows must belong to one case and match fit_fs_hz (50 or 500 Hz).
+    Optional boolean analysis_masks intersect the fixed interior support.
+    Predictions always filter each complete continuous window; masks apply
+    only to amplitude profiling and residuals. evaluate=False skips the
+    Round-2 foot-aligned metrics.
     """
     if not windows or len({w.caseid for w in windows}) != 1:
         raise ValueError("Require at least one window from exactly one case")
-    if any(w.fs_hz != 50 for w in windows):
-        raise ValueError("Fit at 50 Hz; use evaluate_case for 500 Hz features")
+    if fit_fs_hz not in (50, 500) or any(w.fs_hz != fit_fs_hz for w in windows):
+        raise ValueError("All windows must match fit_fs_hz (50 or 500 Hz)")
     module = model_module(model)
     prepared = [prepare_art(w.art, w.fs_hz, branch, catheter_params) for w in windows]
     unavailable = next((p for p in prepared if not p["available"]), None)
     if unavailable is not None:
         return {"available": False, "reason": unavailable["reason"], "model": model,
-                "branch": branch, "caseid": int(windows[0].caseid)}
+                "branch": branch, "caseid": int(windows[0].caseid),
+                "fit_fs_hz": fit_fs_hz}
     physiological_names = list(module.PARAM_NAMES) if fixed_physiology is None else []
     corner_names = ["lo_hz", "hi_hz"] if _fit_corners else []
     names = physiological_names+corner_names
@@ -99,6 +105,16 @@ def fit_case(windows, model, operator_params, *, branch="uncorrected",
     start.update(initial or {})
     x0 = np.array([start[k] for k in names]+[start.get("ptt_s", .15)])
     masks = [_mask(w, operator_params) for w in windows]
+    if analysis_masks is not None:
+        if len(analysis_masks) != len(windows):
+            raise ValueError("Require one boolean analysis mask per window")
+        for i, (w, supplied) in enumerate(zip(windows, analysis_masks)):
+            supplied = np.asarray(supplied)
+            if supplied.dtype != np.bool_ or supplied.shape != np.shape(w.art):
+                raise ValueError("Analysis mask must be boolean and match its window")
+            masks[i] &= supplied
+            if masks[i].sum() < fit_fs_hz:
+                raise ValueError("Insufficient analysis support after fixed interior crop")
     scales = [np.sqrt(np.sum((w.pleth[m]-w.pleth[m].mean())**2))
               for w, m in zip(windows, masks)]
     if any(s <= 0 for s in scales):
@@ -147,7 +163,7 @@ def fit_case(windows, model, operator_params, *, branch="uncorrected",
            "operator": {k: float(v) if isinstance(v, np.floating) else v
                         for k, v in fitted_operator.items()},
            "catheter_params": dict(catheter_params) if catheter_params else None,
-           "fit_fs_hz": 50,
+           "fit_fs_hz": fit_fs_hz,
            "window_refs": [{"caseid": int(w.caseid), "start_s": float(w.start_s),
                             "end_s": float(w.end_s)} for w in windows],
            "fixed_physiology": fixed_physiology is not None,
@@ -155,8 +171,9 @@ def fit_case(windows, model, operator_params, *, branch="uncorrected",
                                     abs(value-high) <= 1e-4*(high-low))
                           for key, value, low, high in
                           zip(names+["ptt_s"], result.x, lo, hi)}}
-    fit["windows"] = evaluate_case(windows, fit, fitted_operator,
-                                    catheter_params=catheter_params)
+    if evaluate:
+        fit["windows"] = evaluate_case(windows, fit, fitted_operator,
+                                      catheter_params=catheter_params)
     return fit
 
 

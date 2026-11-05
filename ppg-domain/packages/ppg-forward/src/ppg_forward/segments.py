@@ -466,6 +466,59 @@ def case_candidates(caseid, *, scan_dir, ibi_cv_cutoff, gain_step_factor, event_
     return pd.DataFrame(rows)
 
 
+
+def case_sliding_windows(caseid, *, scan_dir, ibi_cv_cutoff, gain_step_factor,
+                         event_policy, recorded_events, scan_bins=None,
+                         stride_s=120, min_qualifying_time_s=3600):
+    """Select record-origin 30 s windows after the qualifying-time gate.
+
+    Qualifying time is the union of quality/gain-screened original 10 s
+    scan bins, within first80 and outside recorded event exclusions. It is
+    measured before sparse sampling. Event-overlapping bins have already
+    been conservatively discarded in full by case_scan_bins before PLETH
+    metadata access, so qualifying time has 10 s scan-bin resolution.
+    """
+    if stride_s <= 0 or stride_s % 10:
+        raise ValueError("Sliding stride must be a positive multiple of 10 s")
+    if min_qualifying_time_s < 0:
+        raise ValueError("Minimum qualifying time must be nonnegative")
+    d = case_scan_bins(caseid, scan_dir=scan_dir, ibi_cv_cutoff=ibi_cv_cutoff,
+                      event_policy=event_policy, recorded_events=recorded_events) if scan_bins is None else scan_bins.copy()
+    end = .8 * recorded_events["dur_s"]
+    intervals = []
+    if not d.empty:
+        good = d.quality_ok & ~gain_step_flags(d, gain_step_factor)
+        for t in sorted(d.loc[good, "t_s"]):
+            a, b = max(0., float(t)), min(end, float(t) + 10.)
+            if a >= b:
+                continue
+            if intervals and a <= intervals[-1][1]:
+                intervals[-1] = (intervals[-1][0], max(intervals[-1][1], b))
+            else:
+                intervals.append((a, b))
+    for a, b in event_exclusions(recorded_events, policy=event_policy):
+        intervals = [(lo, hi) for x, y in intervals
+                     for lo, hi in ((x, min(y, a)), (max(x, b), y)) if lo < hi]
+    qualifying_time_s = float(sum(b - a for a, b in intervals))
+    eligible = qualifying_time_s >= min_qualifying_time_s
+    result = pd.DataFrame()
+    if eligible:
+        candidates = case_candidates(caseid, scan_dir=scan_dir,
+            ibi_cv_cutoff=ibi_cv_cutoff, gain_step_factor=gain_step_factor,
+            event_policy=event_policy, recorded_events=recorded_events, scan_bins=d)
+        if not candidates.empty:
+            on_grid = np.isclose(np.remainder(candidates.start_s, stride_s), 0.,
+                                 atol=1e-8, rtol=0)
+            covered = pd.Series(False, index=candidates.index)
+            for a, b in intervals:
+                covered |= (candidates.start_s >= a) & (candidates.end_s <= b)
+            result = candidates.loc[on_grid & covered].copy()
+    result.attrs.update(qualifying_time_s=qualifying_time_s, eligible=eligible,
+                        window_s=30, stride_s=stride_s, qualifying_time_resolution_s=10,
+                        min_qualifying_time_s=min_qualifying_time_s)
+    return result
+
+
 def choose_windows(d, count=3, spacing_s=600):
     """Prioritize the largest MAP-separated pair, then fill separated windows."""
     if d.empty:

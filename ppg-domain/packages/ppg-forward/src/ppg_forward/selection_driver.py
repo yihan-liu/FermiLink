@@ -7,7 +7,7 @@ import pandas as pd
 
 from ppg_forward.segments import (
     RAW, EVENT_POLICY, WindowAuthorization, read_recorded_events, _raw_path, allowed_cases, case_candidates,
-    choose_windows, load_window, stratified_cases, case_scan_bins, calibrate_gain_step, gain_step_flags,
+    choose_windows, load_window, stratified_cases, case_scan_bins, calibrate_gain_step, gain_step_flags, case_sliding_windows,
 )
 
 
@@ -43,8 +43,14 @@ def run_select(split_path, cases_path, out_dir, *, allow_splits=("train",),
     factor_input = config["gain_step_factor"]
     factor = None if factor_input == "train-p995" else float(factor_input)
     cutoff = float(config.get("ibi_cv_cutoff", .037145875))
-    count = int(config.get("windows_per_case", 3))
-    if (factor is not None and not factor > 1) or not 0 < cutoff <= .3 or count not in (3, 4, 5):
+    selection_mode = config.get("selection_mode", "round2")
+    if selection_mode not in ("round2", "sliding"):
+        raise ValueError("selection_mode must be round2 or sliding")
+    sliding = selection_mode == "sliding"
+    count = None if sliding else int(config.get("windows_per_case", 3))
+    stride_s = float(config.get("stride_s", 120)) if sliding else None
+    min_qualifying_time_s = float(config.get("min_qualifying_time_s", 3600)) if sliding else None
+    if (factor is not None and not factor > 1) or not 0 < cutoff <= .3 or (not sliding and count not in (3, 4, 5)):
         raise ValueError("Require gain factor >1, CV cutoff in (0,.3], and 3-5 windows")
     split_path, cases_path = Path(split_path).resolve(), Path(cases_path).resolve()
     ids = read_case_ids(cases_path)
@@ -80,30 +86,52 @@ def run_select(split_path, cases_path, out_dir, *, allow_splits=("train",),
     calibration["quality_bins"] = sum(int(d.quality_ok.sum()) for d in bins.values() if not d.empty)
     calibration["gain_flagged_bins"] = sum(int(gain_step_flags(d, factor).sum()) for d in bins.values() if not d.empty)
     for cid in ids:
-        candidates = case_candidates(cid, scan_dir=scan_dir, ibi_cv_cutoff=cutoff,
-                                     gain_step_factor=factor, event_policy=event_policy,
-                                     recorded_events=recorded_events[cid], scan_bins=bins[cid])
-        selected = choose_windows(candidates, count=count)
-        availability.append(dict(caseid=cid, candidates=len(candidates), selected=len(selected),
+        if sliding:
+            selected = case_sliding_windows(cid, scan_dir=scan_dir, ibi_cv_cutoff=cutoff,
+                gain_step_factor=factor, event_policy=event_policy,
+                recorded_events=recorded_events[cid], scan_bins=bins[cid],
+                stride_s=stride_s, min_qualifying_time_s=min_qualifying_time_s)
+            candidates = selected
+        else:
+            candidates = case_candidates(cid, scan_dir=scan_dir, ibi_cv_cutoff=cutoff,
+                                         gain_step_factor=factor, event_policy=event_policy,
+                                         recorded_events=recorded_events[cid], scan_bins=bins[cid])
+            selected = choose_windows(candidates, count=count)
+        entry = dict(caseid=cid, candidates=len(candidates), selected=len(selected),
             first80_bins=bins[cid].attrs["first80_bins"],
             event_excluded_bins=bins[cid].attrs["event_excluded_bins"],
-            quality_bins=int(bins[cid].quality_ok.sum()) if not bins[cid].empty else 0))
-        if len(selected) < count:
+            quality_bins=int(bins[cid].quality_ok.sum()) if not bins[cid].empty else 0)
+        if sliding:
+            entry.update(qualifying_time_s=selected.attrs["qualifying_time_s"],
+                eligible=selected.attrs["eligible"],
+                reason=("qualifying_time_below_minimum" if not selected.attrs["eligible"]
+                        else "no_qualifying_grid_windows" if selected.empty else "selected"))
+        availability.append(entry)
+        if selected.empty or (not sliding and len(selected) < count):
             continue
         windows.append(selected)
-        cases.append(dict(caseid=cid, MAP=float(candidates.MAP.median()),
-                          HR=float(candidates.HR.median()), zeta=float(candidates.zeta.iloc[0]),
-                          fn_hz=float(candidates.fn_hz.iloc[0]),
-                          frequency_kind="ring_peak",
-                          catheter_status=candidates.catheter_status.iloc[0],
-                          map_pair_ge15=bool(selected.map_pair_ge15.iloc[0])))
-    if not cases:
+        case = dict(caseid=cid, MAP=float(candidates.MAP.median()),
+                    HR=float(candidates.HR.median()), zeta=float(candidates.zeta.iloc[0]),
+                    fn_hz=float(candidates.fn_hz.iloc[0]), frequency_kind="ring_peak",
+                    catheter_status=candidates.catheter_status.iloc[0],
+                    map_pair_ge15=(bool(selected.MAP.max() - selected.MAP.min() >= 15)
+                                   if sliding else bool(selected.map_pair_ge15.iloc[0])))
+        if sliding:
+            case["qualifying_time_s"] = selected.attrs["qualifying_time_s"]
+        cases.append(case)
+    if not cases and not sliding:
         raise ValueError("No explicit cases have the requested eligible windows")
-    requested_count = int(config.get("n_cases", len(cases)))
-    if requested_count < 1:
+    requested_count = len(cases) if sliding else int(config.get("n_cases", len(cases)))
+    if not sliding and requested_count < 1:
         raise ValueError("n_cases must be positive")
-    case_table = stratified_cases(pd.DataFrame(cases), requested_count)
-    table = pd.concat(windows, ignore_index=True)
+    if sliding:
+        case_table = pd.DataFrame(cases, columns=["caseid", "MAP", "HR", "zeta", "fn_hz",
+            "frequency_kind", "catheter_status", "map_pair_ge15", "qualifying_time_s"])
+    else:
+        case_table = stratified_cases(pd.DataFrame(cases), requested_count)
+    table = pd.concat(windows, ignore_index=True) if windows else pd.DataFrame(columns=[
+        "caseid", "start_s", "end_s", "MAP", "HR", "zeta", "fn_hz",
+        "catheter_status", "frequency_kind", "quality_ok", "ibi_cv", "gain_step_flag"])
     table = table.loc[table.caseid.isin(case_table.caseid)].sort_values(["caseid", "start_s"])
     auth = WindowAuthorization(table, split_path, scan_dir, raw_dir,
                                tuple(allow_splits), event_policy, recorded_events)
@@ -123,6 +151,13 @@ def run_select(split_path, cases_path, out_dir, *, allow_splits=("train",),
                     pump_rule="all recorded Orchestra/*_RATE or drugpump*_RATE; rate>0 and every change +/-600s",
                     pump_track_counts={str(cid): len(ev["recorded_pump_rates"]) for cid, ev in recorded_events.items()},
                     availability=availability, gain_step_calibration=calibration, n_cases=requested_count)
+    metadata["selection_mode"] = selection_mode
+    if sliding:
+        metadata.update(window_s=30, stride_s=stride_s,
+            min_qualifying_time_s=min_qualifying_time_s,
+            qualifying_time_resolution_s=10,
+            qualifying_time_rule="union of quality/gain-screened 10s bins before sparse sampling; event-overlapping bins conservatively excluded in full",
+            qualifying_time_s={str(v["caseid"]): v["qualifying_time_s"] for v in availability})
     (out_dir / "selection.json").write_text(json.dumps(metadata, indent=2))
     return dict(outputs=[str(out_dir / n) for n in
                          ("windows.csv", "cases.csv", "selection.json")],
