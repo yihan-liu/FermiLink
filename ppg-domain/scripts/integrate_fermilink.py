@@ -22,9 +22,15 @@ PACKAGE_SPECS = (
     ("pulse", "pulse_physiology", "pulse_knowledge", "pulse_examples"),
     ("mcx", "mcx_optics", "mcx_knowledge", "mcx_examples"),
     ("peripheral-ppg", "peripheral_ppg", "ppg_knowledge", "ppg_examples"),
-    ("ppg-forward", "ppg_forward", "ppg_knowledge", "ppg_examples"),
-    ("arterial-1d", "arterial_1d", "ppg_knowledge", "ppg_examples"),
+    ("vitaldb-segments", "vitaldb_segments", "vitaldb_knowledge", "vitaldb_examples"),
+    ("ppg-transfer", "ppg_transfer", "transfer_knowledge", "transfer_examples"),
+    ("ppg-models", "ppg_models", "models_knowledge", "models_examples"),
+    ("pwdb", "pwdb", "pwdb_knowledge", "pwdb_examples"),
+    ("openbf-walls", "openbf_walls", "openbf_knowledge", "openbf_examples"),
 )
+# Libraries on the launcher path that are not registered as FermiLink packages.
+LIBRARY_SOURCES = ("ppg-runkit",)
+RETIRED_PACKAGES = ("ppg-forward", "arterial-1d")
 EXCLUDED_DIRS = {".checks", ".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
 SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}}
 
@@ -148,18 +154,25 @@ def install_packages() -> None:
         "pulse": "skills,pulse_knowledge",
         "mcx": "skills,mcx_knowledge",
         "peripheral-ppg": "skills,ppg_knowledge,ppg_examples",
-        "ppg-forward": "skills,ppg_knowledge,ppg_examples",
-        "arterial-1d": "skills,ppg_knowledge,ppg_examples",
+        "vitaldb-segments": "skills,vitaldb_knowledge,vitaldb_examples",
+        "ppg-transfer": "skills,transfer_knowledge,transfer_examples",
+        "ppg-models": "skills,models_knowledge,models_examples",
+        "pwdb": "skills,pwdb_knowledge,pwdb_examples",
+        "openbf-walls": "skills,openbf_knowledge,openbf_examples",
     }
     for package_id, selected in entries.items():
         run([str(CLI), "overlay", package_id, "--entries", selected])
         print(f"overlay: {package_id}: {selected}")
     run([str(CLI), "dependencies", "peripheral-ppg", "--package", "pulse", "--package", "mcx"])
     print("dependencies: peripheral-ppg -> pulse, mcx")
-    run([str(CLI), "dependencies", "ppg-forward", "--package", "peripheral-ppg", "--package", "mcx"])
-    print("dependencies: ppg-forward -> peripheral-ppg, mcx")
-    run([str(CLI), "dependencies", "arterial-1d", "--package", "ppg-forward"])
-    print("dependencies: arterial-1d -> ppg-forward")
+    run([str(CLI), "dependencies", "ppg-models", "--package", "ppg-transfer", "--package", "peripheral-ppg"])
+    print("dependencies: ppg-models -> ppg-transfer, peripheral-ppg")
+    run([str(CLI), "dependencies", "openbf-walls", "--package", "pwdb"])
+    print("dependencies: openbf-walls -> pwdb")
+    for package_id in RETIRED_PACKAGES:
+        if package_id in registry().get("packages", {}):
+            run([str(CLI), "delete", package_id])
+            print(f"removed retired registration: {package_id}")
     ensure_ppg_cli()
 
 def ensure_ppg_cli() -> None:
@@ -178,22 +191,25 @@ def ensure_ppg_cli() -> None:
     forward_python = Path(os.environ.get("PPG_FORWARD_PYTHON", str(python))).absolute()
     if not forward_python.is_file():
         raise RuntimeError(f"PPG_FORWARD_PYTHON is unavailable: {forward_python}")
-    forward = PPG_VENV / "bin" / "ppg-forward"
-    sources = [ROOT / "packages" / name / "src" for name in ("ppg-forward", "arterial-1d", "peripheral-ppg", "mcx")]
-    sources.insert(0, ROOT / ".runtime" / "round3-python")
-    forward.write_text(
-        f"#!{forward_python}\nimport os, runpy, sys\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\nsys.dont_write_bytecode=True\nsys.path[:0]={list(map(str,sources))!r}\nrunpy.run_module('ppg_forward.cli', run_name='__main__')\n",
-        encoding="utf-8",
-    )
-    forward.chmod(0o755)
-    print(f"PPG forward CLI shim: {forward} (interpreter {forward_python})")
-    arterial = PPG_VENV / "bin" / "arterial-1d"
-    arterial.write_text(
-        f"#!{forward_python}\nimport os, runpy, sys\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\nsys.dont_write_bytecode=True\nsys.path[:0]={list(map(str,sources))!r}\nrunpy.run_module('arterial_1d.cli', run_name='__main__')\n",
-        encoding="utf-8",
-    )
-    arterial.chmod(0o755)
-    print(f"Arterial CLI shim: {arterial} (interpreter {forward_python})")
+    names = LIBRARY_SOURCES + tuple(spec[0] for spec in PACKAGE_SPECS if spec[0] != "pulse")
+    sources = [ROOT / ".runtime" / "analysis-python"] + [ROOT / "packages" / name / "src" for name in names]
+    prelude = (f"#!{forward_python}\nimport os, runpy, sys\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\n"
+               f"sys.dont_write_bytecode=True\nsys.path[:0]={list(map(str,sources))!r}\n")
+    for command, module in (("vitaldb-segments", "vitaldb_segments.cli"), ("openbf-walls", "openbf_walls.cli")):
+        shim = PPG_VENV / "bin" / command
+        shim.write_text(prelude + f"runpy.run_module({module!r}, run_name='__main__')\n", encoding="utf-8")
+        shim.chmod(0o755)
+        print(f"CLI shim: {shim} (interpreter {forward_python})")
+    launcher = PPG_VENV / "bin" / "ppg-python"
+    launcher.write_text(prelude + "script = sys.argv.pop(1)\nsys.path.insert(0, os.path.dirname(os.path.abspath(script)))\n"
+                        "runpy.run_path(script, run_name='__main__')\n", encoding="utf-8")
+    launcher.chmod(0o755)
+    print(f"Stage-code launcher: {launcher} (interpreter {forward_python})")
+    for retired in RETIRED_PACKAGES:
+        old = PPG_VENV / "bin" / retired
+        if old.exists():
+            old.unlink()
+            print(f"removed retired CLI shim: {old}")
 
 
 def create_workspace() -> None:

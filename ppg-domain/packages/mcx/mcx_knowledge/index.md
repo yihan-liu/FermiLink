@@ -13,3 +13,7 @@
 固定几何、散射、折射率、光源、探测器、边界、时间窗时，保存的材料分段光程乘体素尺寸得到 mm。每个探测光子 `w=w0*exp(-sum(mua_j*L_j))`；除以发射光子数求和。改变散射或血管几何时不能使用此吸收重加权。`w0` 是初始权重，非吸收后权重。MCX 光子 replay 将基准探测记录及其种子送回 MCX，输出局部空间 Jacobian；默认 Rytov 归一化，体素值为 `-d ln(D)/d mua_voxel`，单位 mm，D 是基准收集功率分数。它是指定基准点的导数，不是组织层在实际 PPG 中的贡献比例；Born 与 Rytov 归一化不同。
 
 方法来源：Yao, Intes & Fang, Biomed Opt Express 9:4588–4603 (2018), DOI [10.1364/BOE.9.004588](https://doi.org/10.1364/BOE.9.004588)；软件事实见上游对应代码与示例。
+
+## 同一组光子的吸收线性化（`mcx_optics.linear`）
+
+固定散射与几何时，`photon_log_weights`、`log_absorption_response` 用同一组探测光子计算 `ln(I1/I0)=ln(E_w exp(-X))`，`X=sum_i delta_mua_i*L_i`（L 为 mm，mua 为 1/mm）；线性项 `-E_w X`，二次项 `Var_w(X)/2`，并给出精确余项与线性项之比。`absorption_jacobian` 给出强度梯度与对数强度 Hessian；`select_sine_excursion`、`sine_ac_dc` 计算正弦血液分数摆动下的光学 AC/DC（峰峰值除以周期均值）；`volume_scattering` 按体积分数混合 mus 与 g。这些是纯 Python 函数，不调用 MCX；具体网格与判据由调用方给出。
