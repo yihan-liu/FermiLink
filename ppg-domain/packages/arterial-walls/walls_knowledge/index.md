@@ -1,5 +1,7 @@
 # Wall laws for 1D arterial networks
 
+Literature wall laws and their implementation requirements for 1D arterial-network solvers such as openBF (`external_packages/openbf/`) and the PWDB model (`external_packages/pwdb/`).
+
 Notation: A lumen area, P transmural pressure, Ad and Pd a reference area and pressure, rho blood density. Wave speed `c^2 = (A/rho) dPe/dA`. Every elastic law below must provide, consistently in fluxes, characteristic boundaries and junctions: elastic pressure Pe(A), dPe/dA, wave speed, the characteristic integral and the pressure potential.
 
 ## Square-root law (PWDB default)

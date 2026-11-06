@@ -12,4 +12,4 @@ With fixed scattering, geometry, source and detector, each detected photon's wei
 
 For `X = sum_i delta_mua_i L_i` over detected photons with baseline weights: `ln(I1/I0) = ln E_w[exp(-X)] = -E_w X + 0.5 Var_w X + ...`. Quadratic-to-linear ratio `0.5 Var_w X / abs(E_w X)`; exact remainder `abs(ln E_w exp(-X) + E_w X)/abs(E_w X)`. Use stable log-sum-exp and the same photons for both states; estimate uncertainty between seeds. Optical AC/DC is peak-to-peak detected intensity over the cycle mean. Clinical PLETH units (band-passed, gain-controlled) give no absolute optical DC.
 
-Reference code: `physiology_examples/absorption_linearization_reference.py`. MCX itself: the `mcx` knowledge base.
+Reference code: `mcx_examples/absorption_linearization_reference.py`.

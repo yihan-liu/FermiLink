@@ -24,9 +24,9 @@ PACKAGE_SPECS = (
     ("openbf", "openbf_cli", "openbf_knowledge", "openbf_examples"),
     ("pwdb", None, "pwdb_knowledge", "pwdb_examples"),
     ("vitaldb", None, "vitaldb_knowledge", "vitaldb_examples"),
-    ("ppg-physiology", None, "physiology_knowledge", "physiology_examples"),
+    ("arterial-walls", None, "walls_knowledge", "walls_examples"),
 )
-RETIRED_PACKAGES = ("peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "ppg-transfer", "ppg-models", "openbf-walls")
+RETIRED_PACKAGES = ("ppg-physiology", "peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "ppg-transfer", "ppg-models", "openbf-walls")
 RETIRED_SHIMS = ("peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "openbf-walls", "ppg-python")
 EXCLUDED_DIRS = {".checks", ".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
 SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}, "openbf": {"openbf_source": "openBF"}}
@@ -155,13 +155,13 @@ def install_packages() -> None:
         "openbf": "skills,openbf_knowledge,openbf_examples",
         "pwdb": "skills,pwdb_knowledge,pwdb_examples",
         "vitaldb": "skills,vitaldb_knowledge,vitaldb_examples",
-        "ppg-physiology": "skills,physiology_knowledge,physiology_examples",
+        "arterial-walls": "skills,walls_knowledge,walls_examples",
     }
     for package_id, selected in entries.items():
         run([str(CLI), "overlay", package_id, "--entries", selected])
         print(f"overlay: {package_id}: {selected}")
-    run([str(CLI), "dependencies", "ppg-physiology", "--package", "openbf", "--package", "pwdb", "--package", "vitaldb", "--package", "mcx", "--package", "pulse"])
-    print("dependencies: ppg-physiology -> openbf, pwdb, vitaldb, mcx, pulse")
+    run([str(CLI), "dependencies", "arterial-walls", "--package", "openbf", "--package", "pwdb"])
+    print("dependencies: arterial-walls -> openbf, pwdb")
     for package_id in RETIRED_PACKAGES:
         if package_id in registry().get("packages", {}):
             run([str(CLI), "delete", package_id])

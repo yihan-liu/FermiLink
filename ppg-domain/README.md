@@ -11,7 +11,7 @@ FermiLink packages that DeepSeek uses as its toolbox for peripheral ABP/PPG simu
 | `openbf` | Upstream openBF 1D arterial blood-flow solver, its limits and how to adapt it in a project copy | `openbf` |
 | `pwdb` | Public Pulse Wave DataBase: files, sites, wall model, time conventions | - |
 | `vitaldb` | VitalDB format, tracks, scan metadata and the data-access rules | - |
-| `ppg-physiology` | Model equations, wall laws with verified parameters, transfer/delay definitions, metrics, optics; reference code | - |
+| `arterial-walls` | Literature wall laws for 1D networks (square-root/PWDB, Voigt, Hughes, Langewouters) with verified parameters and reference closures | - |
 
 Entry rule (same as mcx): upstream tools unchanged, wrappers expose only the tool's own capabilities, knowledge explains use and contains no research decisions. Modified solvers, derivations from a particular round and research hypotheses do not enter a package.
 
@@ -25,4 +25,4 @@ PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/script
 
 This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb; statsmodels under `.runtime/analysis-python`). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
 
-Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`. The Round 1 coupled engineering package `peripheral-ppg` is now a reference example in `ppg-physiology/physiology_examples/peripheral_coupling/`; its acceptance scripts are in `archive/`.
+Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`. Project-specific models, transfer definitions and the Round 1 `peripheral-ppg` pipeline live in the research workspace (`rounds/2026-11-05-round3/methods/`, `archive/legacy-code/reference-implementations/`); the old acceptance scripts are in `archive/`.

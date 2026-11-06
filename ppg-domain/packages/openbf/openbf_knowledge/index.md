@@ -23,7 +23,7 @@ Any other wall law (exponential, arctangent, collapsible) also needs a source ch
 
 ## Changing the solver
 
-Do not edit `openbf_source/`. Copy the needed `src/*.jl` files into the run's project folder, keep the Apache-2.0 notice, change them there, and load the copy instead of the installed package. Check a modified solver on a case with a known answer before using it (for example the unmodified default law must reproduce upstream results, and a published reference network must reproduce within declared tolerances). Equations for alternative wall laws and viscoelastic forms are in the `ppg-physiology` knowledge base.
+Do not edit `openbf_source/`. Copy the needed `src/*.jl` files into the run's project folder, keep the Apache-2.0 notice, change them there, and load the copy instead of the installed package. Check a modified solver on a case with a known answer before using it (for example the unmodified default law must reproduce upstream results, and a published reference network must reproduce within declared tolerances). Equations for alternative wall laws and viscoelastic forms are in the `arterial-walls` knowledge base.
 
 ## Configuration and output
 

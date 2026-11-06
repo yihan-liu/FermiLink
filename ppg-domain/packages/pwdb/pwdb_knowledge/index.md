@@ -12,7 +12,7 @@ Root: segment 1 proximal (AorticRoot). Left radial: distal end of segment 22. Le
 
 ## Model used by PWDB
 
-1D network solved with Nektar1D (access needs author approval). Tapered vessels; Voigt-type viscoelastic wall; three-element Windkessel outlets. Reference radii are at diastolic pressure, not zero pressure. Elastic stiffness from the generator: `Eh = 0.1 (k1 exp(k2 100 r) + k3) r` (source units converted to SI), `B = 4 Eh/(3 r)`, `Pe = Pd + B (sqrt(A/Ad) - 1)`. Viscous input `Gamma` from b0, b1 and radius as in the generator; it is applied only to segments longer than 0.011 m. Equations for reproducing this wall model are in the `ppg-physiology` knowledge base (arterial walls).
+1D network solved with Nektar1D (access needs author approval). Tapered vessels; Voigt-type viscoelastic wall; three-element Windkessel outlets. Reference radii are at diastolic pressure, not zero pressure. Elastic stiffness from the generator: `Eh = 0.1 (k1 exp(k2 100 r) + k3) r` (source units converted to SI), `B = 4 Eh/(3 r)`, `Pe = Pd + B (sqrt(A/Ad) - 1)`. Viscous input `Gamma` from b0, b1 and radius as in the generator; it is applied only to segments longer than 0.011 m. Equations for reproducing this wall model are in the `arterial-walls` knowledge base.
 
 ## Time convention
 
