@@ -7,9 +7,9 @@ Upstream [openBF](https://github.com/INSIGNEO/openBF) 2.8.0 (Apache-2.0, INSIGNE
 | Command | Function |
 | --- | --- |
 | `openbf doctor` | Check that Julia and openBF load; print the openBF version. |
-| `openbf run --config FILE.yaml --out DIR` | Call `openBF.run_simulation(config; save_stats=true, savedir=DIR)` in a fresh directory; save a copy of the config, `openbf.log` and `run.json`. |
+| `openbf run --config FILE.yaml --out DIR [--solver param\|upstream]` | Call `openBF.run_simulation(config; save_stats=true, savedir=DIR)` in a fresh directory with the parameterized copy (default) or upstream; save a copy of the config, `openbf.log` and `run.json`. |
 
-Shim: `/data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/openbf`. Julia project and depot: `ppg-domain/.runtime/julia` (override with `OPENBF_JULIA_RUNTIME`). Julia can also be called directly: `.runtime/julia/runtime/julia-1.11.2/bin/julia --project=.runtime/julia/project` with `JULIA_DEPOT_PATH=.runtime/julia/depot`.
+Parameterized solver: `openbf_param/` (upstream copy with configurable stiffness law, viscoelastic coefficients, exact taper and balanced taper source; defaults identical to upstream). Shim: `/data/liuyihan/FermiLink/ppg-domain/.runtime/ppg-venv/bin/openbf`. Julia environments: `ppg-domain/.runtime/julia/project-param` (develops `openbf_param`) and `.../project` (upstream), depot `.../depot` (override the root with `OPENBF_JULIA_RUNTIME`). Recreate the param environment with `julia --project=.runtime/julia/project-param -e 'using Pkg; Pkg.develop(path="packages/openbf/openbf_param")'`. Julia can also be called directly: `.runtime/julia/runtime/julia-1.11.2/bin/julia --project=.runtime/julia/project` with `JULIA_DEPOT_PATH=.runtime/julia/depot`.
 
 - [How openBF works, configuration and limits](openbf_knowledge/index.md)
 - [Procedure](skills/openbf/SKILL.md)

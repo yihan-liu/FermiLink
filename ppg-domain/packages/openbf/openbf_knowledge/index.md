@@ -12,18 +12,23 @@ E is one Young's modulus per vessel (Pa). If `h0` is not given, wall thickness i
 
 Junctions: bifurcations, conjunctions and anastomoses solved by Newton iteration on mass and total-pressure continuity. Inlet: flow time series from the inlet file (node 1). Outlets: reflection coefficient `Rt`, two-element (`R1`, `Cc`) or three-element Windkessel (`R1`, `R2`, `Cc`, optional `Pout`).
 
-## Viscoelasticity (upstream limits)
+## Solvers: parameterized copy (default) and upstream
 
-`visco-elastic: true` enables a Kelvin-Voigt term: `Gamma = b1 0.5/R0 + b0`, `Cv = Gamma/(rho sqrt(A0))`. It enters the solution through a diffusion step (`src/solver.jl:162`) and the saved pressure (`src/simulation.jl:32`). Two limits matter for literature reproductions:
+`openbf run` uses `openbf_param/`, a copy of upstream 2.8.0 changed only in `src/vessel.jl` and `src/solver.jl` (see `openbf_param/PARAMETERS.md`). With no new option set, its results are identical to upstream (all 99 output files of the Circle of Willis example matched byte for byte on 2026-11-06). `--solver upstream` runs the unchanged package. The package is frozen: further wall laws or numerical changes belong in a run's project copy.
 
-1. `b0 = 0.6` and `b1 = 0.0015` are hard-coded (`src/vessel.jl:193`); per-vessel or per-subject coefficients need a source change.
-2. Stiffness is one E per vessel with empirical h0; a radius-dependent stiffness such as `Eh(r)` along a taper needs a source change.
+Per-vessel options added (all default to upstream behaviour):
 
-Any other wall law (exponential, arctangent, collapsible) also needs a source change: wave speed, fluxes, characteristic boundary equations and junction conditions all assume the square-root law above.
+| Key | Values | Effect |
+| --- | --- | --- |
+| `stiffness_law` | `openbf` (default) / `pwdb` | `pwdb`: `beta = (4/3) 0.1 (k1 exp(k2 100 r) + k3)` per cell from `k1` [g/s^2/cm], `k2` [1/cm], `k3` [g/s^2/cm] (PWDB `Eh = 0.1 (k1 exp(k2 100 r) + k3) r`, `beta = 4 Eh/(3 r)`); `E` not needed |
+| `b0`, `b1` | numbers | Viscoelastic coefficients of the upstream form `Gamma = b1 0.5/R0 + b0`, `Cv = Gamma/(rho sqrt(A0))` (defaults 0.6, 0.0015) |
+| `visco_law` | `openbf` (default) / `pwdb` | `pwdb`: PWDB generator `Gamma_in = (4/pi)(b1/(2 100 r) + b0)/1000/(2r)^2` with `b0` [g/s], `b1` [g cm/s]; `Bv = Gamma_in/sqrt(A)`, `Cv = Gamma_in sqrt(A0)/rho` (linearized `(A/rho) d/dx(Bv dQ/dx)`). Requires `visco-elastic: true` |
+| `exact_taper` | `false` (default) / `true` | Upstream sets `R0[i] = Rp + (Rd-Rp)/(M-1) (i-1) dx`, which tapers by only about dx/L of the intended amount, and skips the taper source when the radii differ by less than 0.1 mm. `true` uses `R(x) = Rp + (Rd-Rp) x/L` at cell centres and per-metre `dA0/dx` |
+| `balanced_taper` | `false` (default) / `true` | Requires `exact_taper`. Replaces upstream taper source terms with the one derived from the flux form, `-(A/rho)(sqrt(A/A0) - 1 - sqrt(A)/(3 sqrt(A0))) dbeta/dx + beta A^1.5 dA0/dx/(3 rho A0^1.5)`, valid for any `beta(x)`. At rest it cancels the flux gradient: interior spurious acceleration fell from ~3e-3 to ~2e-7 m^3/s^2 on a 3->1.5 mm, 126 mm PWDB-stiffness vessel (`tests/check_balanced_taper.jl`); a residual remains in the first cells next to the inlet ghost |
 
-## Changing the solver
+Upstream defaults to know: one Young's modulus per vessel with empirical `h0(R0)` when `h0` is absent; viscoelastic coefficients fixed unless `b0`/`b1` are given; a zero inflow history gives NaN results (use a tiny positive flow for rest tests).
 
-Do not edit `openbf_source/`. Copy the needed `src/*.jl` files into the run's project folder, keep the Apache-2.0 notice, change them there, and load the copy instead of the installed package. Check a modified solver on a case with a known answer before using it (for example the unmodified default law must reproduce upstream results, and a published reference network must reproduce within declared tolerances). Equations for alternative wall laws and viscoelastic forms are in the `arterial-walls` knowledge base.
+Other wall laws (exponential, arctangent, collapsible) change wave speed, fluxes, characteristics and junctions; implement them in a project copy of `openbf_param/src/` using the `arterial-walls` knowledge base, and verify against this solver with the default law.
 
 ## Configuration and output
 
