@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Register the ppg-domain packages and create a dedicated FermiLink workspace."""
+"""Register the ppg-domain knowledge-base packages in the isolated FermiLink registry."""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -21,14 +21,13 @@ PPG_VENV = ROOT / ".runtime" / "ppg-venv"
 PACKAGE_SPECS = (
     ("pulse", "pulse_physiology", "pulse_knowledge", "pulse_examples"),
     ("mcx", "mcx_optics", "mcx_knowledge", "mcx_examples"),
-    ("peripheral-ppg", "peripheral_ppg", "ppg_knowledge", "ppg_examples"),
     ("openbf", "openbf_cli", "openbf_knowledge", "openbf_examples"),
     ("pwdb", None, "pwdb_knowledge", "pwdb_examples"),
     ("vitaldb", None, "vitaldb_knowledge", "vitaldb_examples"),
     ("ppg-physiology", None, "physiology_knowledge", "physiology_examples"),
 )
-RETIRED_PACKAGES = ("ppg-forward", "arterial-1d", "vitaldb-segments", "ppg-transfer", "ppg-models", "openbf-walls")
-RETIRED_SHIMS = ("ppg-forward", "arterial-1d", "vitaldb-segments", "openbf-walls", "ppg-python")
+RETIRED_PACKAGES = ("peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "ppg-transfer", "ppg-models", "openbf-walls")
+RETIRED_SHIMS = ("peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "openbf-walls", "ppg-python")
 EXCLUDED_DIRS = {".checks", ".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
 SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}, "openbf": {"openbf_source": "openBF"}}
 
@@ -153,7 +152,6 @@ def install_packages() -> None:
     entries = {
         "pulse": "skills,pulse_knowledge",
         "mcx": "skills,mcx_knowledge",
-        "peripheral-ppg": "skills,ppg_knowledge,ppg_examples",
         "openbf": "skills,openbf_knowledge,openbf_examples",
         "pwdb": "skills,pwdb_knowledge,pwdb_examples",
         "vitaldb": "skills,vitaldb_knowledge,vitaldb_examples",
@@ -162,8 +160,6 @@ def install_packages() -> None:
     for package_id, selected in entries.items():
         run([str(CLI), "overlay", package_id, "--entries", selected])
         print(f"overlay: {package_id}: {selected}")
-    run([str(CLI), "dependencies", "peripheral-ppg", "--package", "pulse", "--package", "mcx"])
-    print("dependencies: peripheral-ppg -> pulse, mcx")
     run([str(CLI), "dependencies", "ppg-physiology", "--package", "openbf", "--package", "pwdb", "--package", "vitaldb", "--package", "mcx", "--package", "pulse"])
     print("dependencies: ppg-physiology -> openbf, pwdb, vitaldb, mcx, pulse")
     for package_id in RETIRED_PACKAGES:
@@ -177,14 +173,6 @@ def ensure_ppg_cli() -> None:
     python = PPG_VENV / "bin" / "python"
     if not python.exists():
         subprocess.run([str(FERMILINK_PYTHON), "-m", "venv", str(PPG_VENV)], check=True)
-    executable = PPG_VENV / "bin" / "peripheral-ppg"
-    package_src = ROOT / "packages" / "peripheral-ppg" / "src"
-    executable.write_text(
-        f"#!{python}\nimport runpy, sys\nsys.path.insert(0, {str(package_src)!r})\nrunpy.run_module('peripheral_ppg.cli', run_name='__main__')\n",
-        encoding="utf-8",
-    )
-    executable.chmod(0o755)
-    print(f"PPG CLI shim: {executable}")
     forward_python = Path(os.environ.get("PPG_FORWARD_PYTHON", str(python))).absolute()
     if not forward_python.is_file():
         raise RuntimeError(f"PPG_FORWARD_PYTHON is unavailable: {forward_python}")
@@ -200,37 +188,15 @@ def ensure_ppg_cli() -> None:
             old.unlink()
             print(f"removed retired CLI shim: {old}")
 
-def create_workspace() -> None:
-    workspace = ROOT / "workspaces" / "fermilink-validation"
-    workspace.parent.mkdir(parents=True, exist_ok=True)
-    action = "refreshing" if workspace.exists() else "initializing"
-    print(f"{action} package-linked workspace: {workspace}")
-    run([str(CLI), "init", "peripheral-ppg", str(workspace)])
-    readme = workspace / "README.md"
-    if not readme.exists():
-        readme.write_text(
-            "# Peripheral PPG FermiLink workspace\n\n"
-            "Primary navigation: `skills/ppg-model/SKILL.md`, `ppg_knowledge/index.md`, and `ppg_examples/engineering_example.json`.\n\n"
-            "Pulse and MCX skills, knowledge indexes, and source trees are linked under `external_packages/pulse/` and `external_packages/mcx/`.\n\n"
-            f"Run the coupled example with `{ROOT}/.runtime/ppg-venv/bin/peripheral-ppg simulate --config {workspace}/ppg_examples/engineering_example.json --output {ROOT}/runs/workspace-coupled-demo`, then validate the new run with the same CLI's `validate-run` command.\n",
-            encoding="utf-8",
-        )
-    print(f"workspace ready: {workspace}")
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--install", action="store_true", help="register/refresh managed packages, configure overlays/dependencies, and prepare the PPG CLI")
-    parser.add_argument("--workspace", action="store_true", help="initialize the dedicated workspace after registration")
     args = parser.parse_args()
     try:
         for spec in PACKAGE_SPECS:
             check_package(*spec)
         if args.install:
             install_packages()
-        if args.workspace:
-            if not args.install and "peripheral-ppg" not in registry().get("packages", {}):
-                raise RuntimeError("Install/register packages first with --install")
-            create_workspace()
     except Exception as error:
         print(f"BLOCKED: {error}", file=sys.stderr)
         return 2

@@ -15,7 +15,7 @@ DEFAULT_PARAMS = {"fs_hz": 50.0, "tau_s": 0.6}
 
 
 def predict(art, params):
-    from peripheral_ppg.model import local_model
+    from peripheral_ppg.model import local_model  # physiology_examples/peripheral_coupling/peripheral_ppg
     x, p, fs = _input(art, params, DEFAULT_PARAMS)
     tau = float(p["tau_s"])
     if tau <= 0:

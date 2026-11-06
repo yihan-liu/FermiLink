@@ -23,5 +23,6 @@ Keep these distinct in reports: literature facts (cited), modelling assumptions 
 | `transfer_reference.py` | Beat feet, ensembles, beat-segmented and periodic harmonic transfer, weighted harmonic group delay |
 | `ensemble_metrics_reference.py` | Ensemble NMSE, odd/even noise ceiling, morphology features |
 | `absorption_linearization_reference.py` | Same-photon absorption reweighting and log-intensity linearization |
+| `peripheral_coupling/` | Pulse pressure -> 2R1C bed -> blood fraction -> MCX optics (the earlier engineering package; see its README and KNOWLEDGE.md) |
 
 These passed synthetic checks when written; numbers they produce are not validated physiology.

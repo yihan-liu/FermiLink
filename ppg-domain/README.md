@@ -12,7 +12,6 @@ FermiLink packages that DeepSeek uses as its toolbox for peripheral ABP/PPG simu
 | `pwdb` | Public Pulse Wave DataBase: files, sites, wall model, time conventions | - |
 | `vitaldb` | VitalDB format, tracks, scan metadata and the data-access rules | - |
 | `ppg-physiology` | Model equations, wall laws with verified parameters, transfer/delay definitions, metrics, optics; reference code | - |
-| `peripheral-ppg` | Pulse -> 2R1C bed -> MCX coupled engineering example | `peripheral-ppg` |
 
 Entry rule (same as mcx): upstream tools unchanged, wrappers expose only the tool's own capabilities, knowledge explains use and contains no research decisions. Modified solvers, derivations from a particular round and research hypotheses do not enter a package.
 
@@ -24,6 +23,6 @@ From the FermiLink root:
 PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/scripts/integrate_fermilink.py --install
 ```
 
-This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`peripheral-ppg`, `openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb; statsmodels under `.runtime/analysis-python`). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
+This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb; statsmodels under `.runtime/analysis-python`). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
 
-Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`.
+Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`. The Round 1 coupled engineering package `peripheral-ppg` is now a reference example in `ppg-physiology/physiology_examples/peripheral_coupling/`; its acceptance scripts are in `archive/`.
