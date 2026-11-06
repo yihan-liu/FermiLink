@@ -1,9 +1,0 @@
-This package contains modified portions of openBF 2.8.0
-Copyright 2015-2026 INSIGNEO Institute for in silico Medicine
-Apache License 2.0; see LICENSE-openBF.
-Source revision: fae58658e060640fb523141e47001e1522b88b0b
-Upstream: https://github.com/INSIGNEO/openBF
-
-Package-owned adaptations provide explicit constitutive laws, PWDB geometry,
-source conventions, consistent numerical flux/characteristics/junctions and
-an isolated simulation driver. Upstream source remains unchanged.

@@ -1,24 +1,22 @@
 # ppg-domain
 
-FermiLink toolbox packages for peripheral ABP/PPG research. Each package does one job and contains no experiment design; rounds, cohorts, criteria and thresholds live in the research workspace (`/data/liuyihan/abp-ppg-fermilink`, stage goals under `projects/<round>/prompts/`, stage code under `projects/<round>/code/`).
+FermiLink packages that DeepSeek uses as its toolbox for peripheral ABP/PPG simulation. Each package is a knowledge base for a mature tool or data source: skills, documentation, upstream source (read-only) and examples. Packages say how to use a tool, not what to study; research goals, cohorts, criteria and interpretation live in the research workspace (`/data/liuyihan/abp-ppg-fermilink`). Registered packages change rarely, through reviewed batches of DeepSeek's suggested skills updates.
 
 ## Packages
 
-| Package | One-sentence scope | Depends on | CLI |
-| --- | --- | --- | --- |
-| `pulse` | Official Pulse whole-body circulation runs. | upstream Pulse | `pulse` |
-| `mcx` | MCX photon transport, absorption reweighting, replay Jacobians and same-photon absorption linearization. | upstream MCX/PMCX | `mcx` |
-| `peripheral-ppg` | Pulse pressure through a local 2R1C bed and MCX optics to simulated PPG. | pulse, mcx | `peripheral-ppg` |
-| `vitaldb-segments` | Audited VitalDB ART/PLETH window reading and window selection under the split-v1 access contract. | ppg-runkit | `vitaldb-segments` |
-| `ppg-transfer` | Beat ensembles, harmonic transfer H_k, H1 phase delay and k=1..3 group delay, shared by data and models. | - | library |
-| `ppg-models` | ART-to-area model ladder M0-M4, observation operator, catheter correction, fitting and ensemble waveform metrics. | ppg-transfer, peripheral-ppg | library |
-| `pwdb` | Public PWDB subjects: geometry, wall coefficients and source-time references. | - | library |
-| `openbf-walls` | PWDB-network simulations with an adapted openBF solver and three wall laws (not yet numerically accepted). | pwdb, ppg-runkit | `openbf-walls` |
-| `ppg-runkit` | Run directories, hashes and validation (library, not registered). | - | - |
+| Package | Contents | CLI |
+| --- | --- | --- |
+| `pulse` | Official Pulse whole-body circulation engine | `pulse` |
+| `mcx` | Official MCX/PMCX photon transport, absorption reweighting, replay Jacobians | `mcx` |
+| `openbf` | Upstream openBF 1D arterial blood-flow solver, its limits and how to adapt it in a project copy | `openbf` |
+| `pwdb` | Public Pulse Wave DataBase: files, sites, wall model, time conventions | - |
+| `vitaldb` | VitalDB format, tracks, scan metadata and the data-access rules | - |
+| `ppg-physiology` | Model equations, wall laws with verified parameters, transfer/delay definitions, metrics, optics; reference code | - |
+| `peripheral-ppg` | Pulse -> 2R1C bed -> MCX coupled engineering example | `peripheral-ppg` |
 
-Dependencies point only downward; no package imports a sibling at the same level or above.
+Entry rule (same as mcx): upstream tools unchanged, wrappers expose only the tool's own capabilities, knowledge explains use and contains no research decisions. Modified solvers, derivations from a particular round and research hypotheses do not enter a package.
 
-## Registration and launchers
+## Registration
 
 From the FermiLink root:
 
@@ -26,16 +24,6 @@ From the FermiLink root:
 PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/scripts/integrate_fermilink.py --install
 ```
 
-This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/`: `peripheral-ppg`, `vitaldb-segments`, `openbf-walls`, and `ppg-python`, a launcher that runs a stage script with every package source importable:
+This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`peripheral-ppg`, `openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb; statsmodels under `.runtime/analysis-python`). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
 
-```bash
-ppg-domain/.runtime/ppg-venv/bin/ppg-python projects/<round>/code/<script>.py ...
-```
-
-Runtime directories: `.runtime/julia` (Julia project/depot for openbf-walls), `.runtime/pwdb` (cached PWDB subjects), `.runtime/analysis-python` (extra analysis libraries such as statsmodels).
-
-## Checks
-
-Package tests are synthetic and open no patient data. `python3 scripts/run_acceptance.py --quick` checks structure, registry and solver doctors for pulse, mcx and peripheral-ppg; each package also has its own `doctor`.
-
-Round 2 results were produced by the earlier `ppg-forward` package; reproduce them from git tag `round2-final`.
+Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`.

@@ -5,12 +5,4 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pwdb"
 version = "0.1.0"
-description = "Public PWDB subjects and source-time references"
-requires-python = ">=3.11"
-dependencies = ["numpy"]
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[project.optional-dependencies]
-test = ["pytest"]
+requires-python = ">=3.10"

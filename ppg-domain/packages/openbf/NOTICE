@@ -1,0 +1,3 @@
+openbf_source links to upstream openBF 2.8.0, revision fae58658e060640fb523141e47001e1522b88b0b.
+Copyright 2015-2026 INSIGNEO Institute for in silico Medicine. Apache License 2.0; see LICENSE-openBF.
+openbf_examples/ copies the upstream alastruey2007 Circle of Willis model.
