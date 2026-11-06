@@ -12,4 +12,6 @@ Domain knowledge for peripheral arterial pressure and photoplethysmography model
 | [optics.md](physiology_knowledge/optics.md) | Blood-volume absorption mixing and same-photon log-intensity linearization |
 | [sources.md](physiology_knowledge/sources.md) | Verified references |
 
+When a run pins this package, the `openbf`, `pwdb`, `vitaldb`, `mcx` and `pulse` knowledge bases are available under `external_packages/<id>/`.
+
 Reference code in `physiology_examples/` shows one tested way to implement the definitions. It is not a fixed estimator: copy and adapt it in a project folder, and state any change.

@@ -8,6 +8,8 @@ Use this package when a goal involves relating arterial pressure to finger PPG: 
 - Optics: [optics.md](optics.md).
 - References: [sources.md](sources.md).
 
+Tool and data knowledge bases are under `external_packages/`: `openbf` (1D arterial solver), `pwdb` (public pulse-wave database), `vitaldb` (clinical recordings and access rules), `mcx` (photon transport), `pulse` (whole-body circulation).
+
 ## Evidence labels
 
 Keep these distinct in reports: literature facts (cited), modelling assumptions (stated), engineering parameter choices (declared ranges, not measurements) and project findings (linked to a run). Agreement between a fitted model and a waveform does not identify unique physiology.
