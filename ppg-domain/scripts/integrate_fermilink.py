@@ -164,6 +164,8 @@ def install_packages() -> None:
         print(f"overlay: {package_id}: {selected}")
     run([str(CLI), "dependencies", "peripheral-ppg", "--package", "pulse", "--package", "mcx"])
     print("dependencies: peripheral-ppg -> pulse, mcx")
+    run([str(CLI), "dependencies", "ppg-physiology", "--package", "openbf", "--package", "pwdb", "--package", "vitaldb", "--package", "mcx", "--package", "pulse"])
+    print("dependencies: ppg-physiology -> openbf, pwdb, vitaldb, mcx, pulse")
     for package_id in RETIRED_PACKAGES:
         if package_id in registry().get("packages", {}):
             run([str(CLI), "delete", package_id])
