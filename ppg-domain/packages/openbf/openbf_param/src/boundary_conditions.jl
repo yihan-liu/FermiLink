@@ -68,7 +68,19 @@ function outcompat!(v::Vessel, dt::Float64)
 end
 
 
+const WK_STEP_MAX_RESIDUAL = Ref(0.0)
+const WK_STEP_MAX_LABEL = Ref("")
+const WK_STEP_TOTAL_ITERATIONS = Ref(0)
+
+function reset_wk_diagnostics!()
+    WK_STEP_MAX_RESIDUAL[] = 0.0
+    WK_STEP_MAX_LABEL[] = ""
+    WK_STEP_TOTAL_ITERATIONS[] = 0
+    return
+end
+
 function wk3!(v::Vessel, dt::Float64, ρ::Float64)
+    check_area(v.label, v.M, v.A[end])
     # inlet impedance matching
     if v.inlet_impedance_matching
         v.R1 = ρ * wave_speed(v.A[end], v.gamma[end-1]) / v.A[end]
@@ -88,18 +100,42 @@ function wk3!(v::Vessel, dt::Float64, ρ::Float64)
         (v.Pext + bA0 * (sqrt(As) - sA0)) + v.Pc
 
     dfun(As) = v.R1 * (v.u[end] + sgamma * (ssAl - 1.25 * sqrt(sqrt(As)))) - bA0 * 0.5 / sqrt(As)
-    As = newtone(fun, dfun, As)
+    As = newtone(fun, dfun, As; tol = v.wk_tolerance, maxiter = v.wk_maxiter,
+                 label = v.label, cell = v.M)
     us = (pressure(As, v.A0[end], v.beta[end], v.Pext) - v.Pout) / (As * v.R1)
 
     v.A[end] = As
     v.u[end] = us
 end
 
-function newtone(f::F, df::DF, xn) where {F, DF}
-    for _=1:10
-        xn -= f(xn) / df(xn)
+function newtone(f::F, df::DF, xn; tol::Float64 = 0.0, maxiter::Int = 10,
+                 label::AbstractString = "", cell::Int = 0) where {F, DF}
+    check_area(label, cell, xn)
+    if tol <= 0.0
+        # Preserve upstream behaviour exactly: always perform ten iterations.
+        for _ = 1:10
+            xn -= f(xn) / df(xn)
+            check_area(label, cell, xn)
+        end
+        r = abs(f(xn))
+        WK_STEP_TOTAL_ITERATIONS[] += 10
+    else
+        r = Inf
+        it = 0
+        for _ = 1:maxiter
+            xn -= f(xn) / df(xn)
+            check_area(label, cell, xn)
+            it += 1
+            r = abs(f(xn))
+            r <= tol && break
+        end
+        WK_STEP_TOTAL_ITERATIONS[] += it
     end
-    xn
+    if r > WK_STEP_MAX_RESIDUAL[]
+        WK_STEP_MAX_RESIDUAL[] = r
+        WK_STEP_MAX_LABEL[] = String(label)
+    end
+    return xn
 end
 
 function update_ghost_cells!(n::Network)

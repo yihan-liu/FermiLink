@@ -45,6 +45,14 @@ mutable struct Vessel
     beta::Vector{Float64}
     Cv::Vector{Float64}
     viscoelastic::Bool
+    Gamma_in::Vector{Float64}
+    adot::Vector{Float64}
+    Aold::Vector{Float64}
+    viscous_pressure::Bool
+    visco_velocity_sync::Bool
+    wk_tolerance::Float64
+    wk_maxiter::Int64
+    alpha_conv::Float64
     gamma::Vector{Float64}
     A0::Vector{Float64}
     tapered::Bool
@@ -108,6 +116,13 @@ mutable struct Vessel
     # waveforms
     waveforms::Dict{String, Array{Float64, 2}}
     waveforms_prev::Dict{String, Array{Float64, 2}}
+end
+
+@inline function check_area(label::AbstractString, cell::Int, area::Float64)
+    if !(isfinite(area) && area > 0.0)
+        error("Nonpositive or nonfinite area in $(label) at cell $(cell): $(area)")
+    end
+    return
 end
 
 wave_speed(A::Float64, gamma::Float64) = sqrt(1.5 * gamma * sqrt(A))
@@ -204,6 +219,13 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
             lo, hi = max(i - 1, 1), min(i + 1, M)
             dTaudx[i] = hi == lo ? 0.0 : (beta[hi] - beta[lo]) / ((hi - lo) * dx)
         end
+    elseif stiffness_law == "pwdb" && get(config, "fix_pwdb_taper_source", false)
+        # Under PWDB stiffness use the spatial derivative of beta in the
+        # non-balanced taper source instead of the upstream E-based expression.
+        for i = 1:M
+            lo, hi = max(i - 1, 1), min(i + 1, M)
+            dTaudx[i] = hi == lo ? 0.0 : (beta[hi] - beta[lo]) / ((hi - lo) * dx)
+        end
     end
     gamma = zeros(Float64, M + 2)
     gamma[2:M+1] = beta ./ (3 * b.rho * R0 * sqrt(pi))
@@ -213,20 +235,29 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
     # TODO: add to docs
     # TODO: visco-elastic -> visco_elastic ???
     viscoelastic = get(config, "visco-elastic", false)
+    viscous_pressure = get(config, "viscous_pressure_output", false)
+    visco_velocity_sync = get(config, "visco_velocity_sync", false)
+    wk_tolerance = get(config, "wk_tolerance", 0.0)
+    wk_maxiter = get(config, "wk_maxiter", 10)
+    alpha_conv = get(config, "alpha_conv", 1.0)
     if viscoelastic && visco_law == "pwdb"
         # PWDB generator Gamma_in (b0 [g/s], b1 [g cm/s]); Bv = Gamma_in/sqrt(A); Cv = Gamma_in*sqrt(A0)/rho
         b0 = config["b0"]
         b1 = config["b1"]
-        Γ = (4 / pi) .* (b1 ./ (2 .* 100 .* R0) .+ b0) ./ 1000 ./ (2 .* R0) .^ 2
-        Cv = Γ .* sqrt.(A0) ./ b.rho
+        Gamma_in = (4 / pi) .* (b1 ./ (2 .* 100 .* R0) .+ b0) ./ 1000 ./ (2 .* R0) .^ 2
+        Cv = Gamma_in .* sqrt.(A0) ./ b.rho
     elseif viscoelastic
         b0 = get(config, "b0", 0.6)
         b1 = get(config, "b1", 0.00150)
-        Γ=b1*0.5./R0 .+ b0
-        Cv=Γ./(b.rho.*sqrt.(A0))
+        Gamma = b1*0.5./R0 .+ b0
+        Cv=Gamma./(b.rho.*sqrt.(A0))
+        Gamma_in = Gamma ./ A0
     else
+        Gamma_in = zeros(Float64, M)
         Cv = zeros(Float64, M)
     end
+    adot = zeros(Float64, M)
+    Aold = zeros(Float64, M)
 
     A = zeros(Float64, M) + A0
     Q = zeros(Float64, M) .+ initial_flow
@@ -303,6 +334,14 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
         beta,
         Cv,
         viscoelastic,
+        Gamma_in,
+        adot,
+        Aold,
+        viscous_pressure,
+        visco_velocity_sync,
+        wk_tolerance,
+        wk_maxiter,
+        alpha_conv,
         gamma,
         A0,
         tapered,

@@ -57,6 +57,19 @@ getprog(cycle::Int64, verbose::Bool) =
     verbose ?
     ProgressUnknown(desc = "Solving cycle #$cycle:", spinner = true, showspeed = true) :
     nothing
+function cycle_site_stats(v::Vessel, field::String, column::Int)
+    y = @view v.waveforms[field][:, column]
+    return (mean(y), minimum(y), maximum(y))
+end
+
+function network_total_volume(n::Network)
+    volume = 0.0
+    for v in n.vessels_vec
+        volume += sum(v.A) * v.dx
+    end
+    return volume
+end
+
 function get_inlet_file(config)::String
     if ~haskey(config, "inlet_file")
         return config["project_name"]::String * "_inlet.dat"
@@ -108,6 +121,9 @@ function run_simulation(
 
     tempsave::Vector{String} = deepcopy(get(config, "write_results", []))
     "P" ∉ tempsave && push!(tempsave, "P")
+    diagnostics = get(config, "diagnostics", false)
+    diagnostics && "Q" ∉ tempsave && push!(tempsave, "Q")
+    diagnostics && "A" ∉ tempsave && push!(tempsave, "A")
     network = Network(
         config["network"],
         blood,
@@ -121,6 +137,44 @@ function run_simulation(
     jump::Int64 = config["solver"]["jump"]
     checkpoints = range(0, stop = heart.cardiac_period, length = jump)
 
+    diag_sites = Tuple{String,String,String,Int,Int}[]
+    if diagnostics
+        positions = Dict("inlet" => 2, "quarter" => 3, "midpoint" => 4,
+                         "three_quarter" => 5, "outlet" => 6)
+        for entry in get(config, "diagnostics_sites", [])
+            length(entry) == 3 || error("Each diagnostics_sites entry must be [label, segment, position]")
+            site_label, segment_label, position = String.(entry)
+            column = get(positions, position, 0)
+            column != 0 || error("Unknown diagnostics position $(position)")
+            vessel_index = findfirst(v -> String(v.label) == segment_label, network.vessels_vec)
+            vessel_index === nothing && error("Unknown diagnostics segment $(segment_label)")
+            push!(diag_sites, (site_label, segment_label, position, vessel_index, column))
+        end
+    end
+
+    diag_volume_samples = Float64[]
+    diag_volume_times = Float64[]
+    diag_wk_residual = Float64[]
+    diag_wk_time = Float64[]
+    diag_wk_dt = Float64[]
+    diag_wk_label = String[]
+    diag_wk_iters = Int[]
+    if diagnostics
+        open("diagnostics_cycles.csv", "w") do io
+            println(io, "cycle,cycle_error_mmHg,error_segment,volume_mean_m3,volume_end_m3,volume_change_m3,wk_step_residual_max_Pa,wk_step_residual_mean_Pa,wk_iterations_total,n_steps")
+        end
+        open("diagnostics_sites.csv", "w") do io
+            println(io, "cycle,site,segment,position,P_mean_Pa,P_min_Pa,P_max_Pa,Q_mean_m3_s,Q_min_m3_s,Q_max_m3_s,A_mean_m2,A_min_m2,A_max_m2")
+        end
+        open("diagnostics_volume_steps.csv", "w") do io
+            println(io, "cycle,sample,time_s,volume_m3")
+        end
+        open("diagnostics_windkessel_steps.csv", "w") do io
+            println(io, "cycle,step,time_s,dt_s,max_residual_Pa,label,iterations")
+        end
+    end
+    previous_volume_end = NaN
+
     verbose && println("\nStart simulation")
 
     current_time = 0.0
@@ -129,6 +183,7 @@ function run_simulation(
     counter = 1
     counter_prog = 0
     conv_error::Float64 = floatmax()
+    error_loc = ""
     converged = false
 
     try
@@ -139,9 +194,20 @@ function run_simulation(
             solve!(network, dt, current_time)
             update_ghost_cells!(network)
             verbose && (counter_prog += 1) % 100 == 0 && next!(prog)
+            if diagnostics
+                push!(diag_wk_residual, WK_STEP_MAX_RESIDUAL[])
+                push!(diag_wk_time, current_time)
+                push!(diag_wk_dt, dt)
+                push!(diag_wk_label, WK_STEP_MAX_LABEL[])
+                push!(diag_wk_iters, WK_STEP_TOTAL_ITERATIONS[])
+            end
 
             if current_time >= checkpoints[counter]
                 save_waveforms.(counter, current_time, network.vessels_vec)
+                if diagnostics
+                    push!(diag_volume_times, current_time)
+                    push!(diag_volume_samples, network_total_volume(network))
+                end
                 counter += 1
             end
 
@@ -153,6 +219,52 @@ function run_simulation(
                 if passed_cycles > 0
                     # compute_pressure(network)
                     conv_error, error_loc = get_conv_error(network)
+                end
+
+                if diagnostics
+                    cycle_number = passed_cycles + 1
+                    volume_end = network_total_volume(network)
+                    volume_mean = isempty(diag_volume_samples) ? volume_end : mean(diag_volume_samples)
+                    volume_change = isnan(previous_volume_end) ? NaN : volume_end - previous_volume_end
+                    wk_max = isempty(diag_wk_residual) ? NaN : maximum(diag_wk_residual)
+                    wk_mean = isempty(diag_wk_residual) ? NaN : mean(diag_wk_residual)
+                    wk_iters = isempty(diag_wk_iters) ? 0 : sum(diag_wk_iters)
+                    open("diagnostics_cycles.csv", "a") do io
+                        println(io, join((cycle_number, conv_error, error_loc, volume_mean,
+                                          volume_end, volume_change, wk_max, wk_mean, wk_iters,
+                                          length(diag_wk_residual)), ","))
+                    end
+                    for (site, segment, position, vessel_index, column) in diag_sites
+                        vessel = network.vessels_vec[vessel_index]
+                        pm, pmin, pmax = cycle_site_stats(vessel, "P", column)
+                        qm, qmin, qmax = cycle_site_stats(vessel, "Q", column)
+                        am, amin, amax = cycle_site_stats(vessel, "A", column)
+                        open("diagnostics_sites.csv", "a") do io
+                            println(io, join((cycle_number, site, segment, position, pm, pmin, pmax,
+                                              qm, qmin, qmax, am, amin, amax), ","))
+                        end
+                    end
+                    for k in eachindex(diag_volume_samples)
+                        open("diagnostics_volume_steps.csv", "a") do io
+                            println(io, join((cycle_number, k, diag_volume_times[k],
+                                              diag_volume_samples[k]), ","))
+                        end
+                    end
+                    for k in eachindex(diag_wk_residual)
+                        open("diagnostics_windkessel_steps.csv", "a") do io
+                            println(io, join((cycle_number, k, diag_wk_time[k], diag_wk_dt[k],
+                                              diag_wk_residual[k], diag_wk_label[k],
+                                              diag_wk_iters[k]), ","))
+                        end
+                    end
+                    empty!(diag_volume_samples)
+                    empty!(diag_volume_times)
+                    empty!(diag_wk_residual)
+                    empty!(diag_wk_time)
+                    empty!(diag_wk_dt)
+                    empty!(diag_wk_label)
+                    empty!(diag_wk_iters)
+                    previous_volume_end = volume_end
                 end
 
                 flush_waveforms.(network.vessels_vec)

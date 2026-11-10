@@ -18,6 +18,9 @@ limitations under the License.
 function calculateΔt(n::Network)
     minΔt = 1.0
     for v in n.vessels_vec
+        for i in eachindex(v.A)
+            check_area(v.label, i, v.A[i])
+        end
         maxspeed = 0.0
         for i in eachindex(v.u)
             @inbounds speed = abs(v.u[i] + wave_speed(v.A[i], v.gamma[i+1]))
@@ -63,6 +66,10 @@ end
 
 function solve!(n::Network, dt::Float64, current_time::Float64)::Nothing
     fill!(n.anastomosis_solved, false)
+    reset_wk_diagnostics!()
+    for v in n.vessels_vec
+        v.Aold .= v.A
+    end
 
     # Phase A: all junctions in topological order (reads only previous-step boundaries)
     @inbounds for k in eachindex(n.topo_order)
@@ -72,6 +79,9 @@ function solve!(n::Network, dt::Float64, current_time::Float64)::Nothing
     # Phase B: all MUSCL advances (boundaries fully set; order irrelevant)
     @inbounds for k in eachindex(n.topo_order)
         muscl!(n.vessels_vec[Int(n.topo_order[k])], dt, n.blood)
+    end
+    for v in n.vessels_vec
+        v.adot .= (v.A .- v.Aold) ./ dt
     end
     return
 end
@@ -84,14 +94,22 @@ end
     @fastmath @inbounds for i = eachindex(v.Al)
         Ali = v.vA[i] + v.slopesA[i]
         Ari = v.vA[i] - v.slopesA[i]
+        cell = clamp(i - 1, 1, v.M)
+        check_area(v.label, cell, Ali)
+        check_area(v.label, cell, Ari)
         Qli = v.vQ[i] + v.slopesQ[i]
         Qri = v.vQ[i] - v.slopesQ[i]
         v.Al[i] = Ali
         v.Ar[i] = Ari
         v.Ql[i] = Qli
         v.Qr[i] = Qri
-        v.Fl[i] = Qli * Qli / Ali + v.gamma[i] * Ali * sqrt(Ali)
-        v.Fr[i] = Qri * Qri / Ari + v.gamma[i] * Ari * sqrt(Ari)
+        if v.alpha_conv == 1.0
+            v.Fl[i] = Qli * Qli / Ali + v.gamma[i] * Ali * sqrt(Ali)
+            v.Fr[i] = Qri * Qri / Ari + v.gamma[i] * Ari * sqrt(Ari)
+        else
+            v.Fl[i] = v.alpha_conv * Qli * Qli / Ali + v.gamma[i] * Ali * sqrt(Ali)
+            v.Fr[i] = v.alpha_conv * Qri * Qri / Ari + v.gamma[i] * Ari * sqrt(Ari)
+        end
     end
     @fastmath @inbounds for i = 1:v.M+1
         v.fluxA[i] = 0.5 * (v.Qr[i+1] + v.Ql[i] - dxDt * (v.Ar[i+1] - v.Al[i]))
@@ -101,6 +119,9 @@ end
 end
 
 function muscl!(v::Vessel, dt::Float64, b::Blood)
+    for i in eachindex(v.A)
+        check_area(v.label, i, v.A[i])
+    end
     dxDt = v.dx / dt
     invDxDt = 1.0 / dxDt
 
@@ -139,6 +160,11 @@ function muscl!(v::Vessel, dt::Float64, b::Blood)
             0.5 * (v.A[i] + v.vA[i+1] + invDxDt * (v.fluxA[i] - v.fluxA[i+1]))
         @inbounds v.Q[i] =
             0.5 * (v.Q[i] + v.vQ[i+1] + invDxDt * (v.fluxQ[i] - v.fluxQ[i+1]))
+    end
+
+    # Invalid areas cannot be advanced by the next time step.
+    for i in eachindex(v.A)
+        check_area(v.label, i, v.A[i])
     end
 
     #source term
@@ -181,6 +207,7 @@ function muscl!(v::Vessel, dt::Float64, b::Blood)
 
         v.Q = T\d
     end
+    v.viscoelastic && v.visco_velocity_sync && (v.u .= v.Q ./ v.A)
 end
 
 function limit_slopes!(slopes::Vector{Float64}, U::Vector{Float64},

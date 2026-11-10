@@ -26,12 +26,14 @@ function save_waveforms(idx::Int64, t::Float64, v::Vessel)
         v.Q[1],v.Q[n2],v.Q[n3],v.Q[n4],v.Q[M])
     haskey(v.waveforms,"u") && _write_waveform_row!(v.waveforms["u"],idx,t,
         v.u[1],v.u[n2],v.u[n3],v.u[n4],v.u[M])
+    pval(i) = begin
+        elastic_pressure = pressure(v.A[i], v.A0[i], v.beta[i], v.Pext) - v.Pout
+        v.viscous_pressure && v.viscoelastic ?
+            elastic_pressure + v.Gamma_in[i] / sqrt(v.A[i]) * v.adot[i] :
+            elastic_pressure
+    end
     haskey(v.waveforms,"P") && _write_waveform_row!(v.waveforms["P"],idx,t,
-        pressure(v.A[1], v.A0[1], v.beta[1], v.Pext)-v.Pout,
-        pressure(v.A[n2],v.A0[n2],v.beta[n2],v.Pext)-v.Pout,
-        pressure(v.A[n3],v.A0[n3],v.beta[n3],v.Pext)-v.Pout,
-        pressure(v.A[n4],v.A0[n4],v.beta[n4],v.Pext)-v.Pout,
-        pressure(v.A[M], v.A0[M], v.beta[M], v.Pext)-v.Pout)
+        pval(1), pval(n2), pval(n3), pval(n4), pval(M))
     return
 end
 
