@@ -3,6 +3,10 @@ name: arterial-walls
 description: Choose and implement arterial wall laws (square-root with PWDB stiffness, Voigt viscosity, Hughes exponential modulus, Langewouters arctangent) in a 1D arterial-network solver, with verified literature parameters.
 ---
 
+## Solver changes
+
+Never modify, copy-and-modify, or patch the openBF solver. If a result looks like a solver defect, stop that line of work, write a minimal reproducing case (smallest network, settings, observed vs expected) in summary.md under 'Suspected solver defects', and continue only with steps that do not depend on it.
+
 # Using the wall-law knowledge
 
 1. Read `walls_knowledge/index.md`; take literature parameters only from `walls_knowledge/langewouters1984_table2.md` and `walls_knowledge/sources.md`.

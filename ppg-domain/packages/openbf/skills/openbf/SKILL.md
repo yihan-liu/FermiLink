@@ -3,6 +3,10 @@ name: openbf
 description: Configure and run 1D arterial blood-flow simulations with upstream openBF, and adapt the solver in a project copy when a wall law or viscoelastic form is not supported.
 ---
 
+## Solver changes
+
+Never modify, copy-and-modify, or patch the openBF solver. If a result looks like a solver defect, stop that line of work, write a minimal reproducing case (smallest network, settings, observed vs expected) in summary.md under 'Suspected solver defects', and continue only with steps that do not depend on it.
+
 # openBF procedure
 
 1. Read `openbf_knowledge/index.md`, then the upstream docs in `openbf_source/docs/src/man/`. Check `openbf doctor`.
