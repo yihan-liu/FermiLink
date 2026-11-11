@@ -25,6 +25,10 @@ Set vessel options in the relevant network segment; set diagnostics options at t
 - `diagnostics_sites`: site triples `[label, segment_label, position]`; default empty list, labels and positions dimensionless. Position is one of `inlet`, `quarter`, `midpoint`, `three_quarter`, `outlet`.
 - `viscous_pressure_output`: add Gamma/sqrt(A)*dA/dt to pressure for viscoelastic vessels; default false, dimensionless boolean. This pressure also affects the convergence check.
 - `alpha_conv`: momentum-flux convective coefficient; default 1.0, dimensionless. Choose a consistent `gamma_profile`: alpha=4/3 corresponds to gamma_profile=2. This changes the momentum flux only; CFL, boundary and junction relations retain the upstream alpha=1 approximation; alpha != 1 has not been validated as a consistent network model.
-- `fix_pwdb_taper_source`: use d(beta)/dx in the non-balanced tapered source for PWDB stiffness; default false, dimensionless boolean.
+- `fix_pwdb_taper_source`: **Do not use.** This option changes the non-balanced tapered source for PWDB stiffness; default false, dimensionless boolean.
 - Nonpositive or nonfinite area raises an error identifying the vessel and cell; always enabled, no option or units.
 - `visco_velocity_sync`: set u=Q/A after the viscoelastic step; default false, dimensionless boolean.
+
+## Known defects
+
+- The upstream viscoelastic Crank–Nicolson step uses a=Cv·dt/dx² on both sides instead of a/2, doubling the effective viscous diffusion coefficient. A solver fix requires separate approval; treat viscoelastic results as comparisons only.
