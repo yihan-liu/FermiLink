@@ -8,12 +8,12 @@ FermiLink packages that DeepSeek uses as its toolbox for peripheral ABP/PPG simu
 | --- | --- | --- |
 | `pulse` | Official Pulse whole-body circulation engine | `pulse` |
 | `mcx` | Official MCX/PMCX photon transport, absorption reweighting, replay Jacobians | `mcx` |
-| `openbf` | Upstream openBF 1D arterial blood-flow solver, its limits and how to adapt it in a project copy | `openbf` |
+| `openbf` | openBF 1D arterial blood-flow solver (single implementation `openbf_param/`, openBF 2.8.0 with added options) and its limits | `openbf` |
 | `pwdb` | Public Pulse Wave DataBase: files, sites, wall model, time conventions | - |
 | `vitaldb` | VitalDB format, tracks, scan metadata and the data-access rules | - |
 | `arterial-walls` | Literature wall laws for 1D networks (square-root/PWDB, Voigt, Hughes, Langewouters) with verified parameters and reference closures | - |
 
-Entry rule (same as mcx): upstream tools unchanged, wrappers expose only the tool's own capabilities, knowledge explains use and contains no research decisions. Modified solvers, derivations from a particular round and research hypotheses do not enter a package.
+Entry rule (same as mcx): upstream tools unchanged (openbf: one implementation, `packages/openbf/openbf_param`, whose added options default to openBF 2.8.0 behaviour), wrappers expose only the tool's own capabilities, knowledge explains use and contains no research decisions. Modified solvers, derivations from a particular round and research hypotheses do not enter a package.
 
 ## Registration
 

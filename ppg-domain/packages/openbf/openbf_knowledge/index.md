@@ -1,6 +1,6 @@
 # openBF knowledge
 
-Primary sources: `openbf_source/docs/src/man/` (quickstart, config, overview, examples) and `openbf_source/src/`. Read them before writing a configuration.
+Primary sources: the openBF 2.8.0 documentation in `/data/liuyihan/reference/openBF-upstream-2.8.0/docs/src/man/` (quickstart, config, overview, examples) and the running source `openbf_param/src/`. Read them before writing a configuration.
 
 ## Model
 
@@ -12,9 +12,9 @@ E is one Young's modulus per vessel (Pa). If `h0` is not given, wall thickness i
 
 Junctions: bifurcations, conjunctions and anastomoses solved by Newton iteration on mass and total-pressure continuity. Inlet: flow time series from the inlet file (node 1). Outlets: reflection coefficient `Rt`, two-element (`R1`, `Cc`) or three-element Windkessel (`R1`, `R2`, `Cc`, optional `Pout`).
 
-## Solvers: parameterized copy (default) and upstream
+## Solver: `openbf_param/`
 
-`openbf run` uses `openbf_param/`, a copy of upstream 2.8.0 changed only in `src/vessel.jl` and `src/solver.jl` (see `openbf_param/PARAMETERS.md`). With no new option set, its results are identical to upstream (all 99 output files of the Circle of Willis example matched byte for byte on 2026-11-06). `--solver upstream` runs the unchanged package. The package is frozen: further wall laws or numerical changes belong in a run's project copy.
+`openbf run` uses `openbf_param/`, the package's only openBF implementation: openBF 2.8.0 with added options (see `openbf_param/PARAMETERS.md` and the skill). With no added option set, its results are identical to openBF 2.8.0 (all 99 output files of the Circle of Willis example matched byte for byte on 2026-11-06). Experiment goals do not change the solver.
 
 Per-vessel options added (all default to upstream behaviour):
 
@@ -28,7 +28,7 @@ Per-vessel options added (all default to upstream behaviour):
 
 Upstream defaults to know: one Young's modulus per vessel with empirical `h0(R0)` when `h0` is absent; viscoelastic coefficients fixed unless `b0`/`b1` are given; a zero inflow history gives NaN results (use a tiny positive flow for rest tests).
 
-Other wall laws (exponential, arctangent, collapsible) change wave speed, fluxes, characteristics and junctions; implement them in a project copy of `openbf_param/src/` using the `arterial-walls` knowledge base, and verify against this solver with the default law.
+Other wall laws (exponential, arctangent, collapsible) change wave speed, fluxes, characteristics and junctions; they need a solver-development goal approved by Yihan (see the skill), which uses the `arterial-walls` knowledge base and verifies against this package with the default law.
 
 ## Configuration and output
 

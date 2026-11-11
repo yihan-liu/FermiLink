@@ -29,7 +29,7 @@ PACKAGE_SPECS = (
 RETIRED_PACKAGES = ("ppg-physiology", "peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "ppg-transfer", "ppg-models", "openbf-walls")
 RETIRED_SHIMS = ("peripheral-ppg", "ppg-forward", "arterial-1d", "vitaldb-segments", "openbf-walls", "ppg-python")
 EXCLUDED_DIRS = {".checks", ".runtime", ".cache", "__pycache__", ".pytest_cache", "build", "dist"}
-SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}, "openbf": {"openbf_source": "openBF"}}
+SOURCE_LINK_TARGETS = {"pulse": {"pulse_source": "pulse"}, "mcx": {"mcx_source": "mcx"}}
 
 def run(args: list[str]) -> str:
     env = os.environ.copy()

@@ -5,4 +5,4 @@ All new options default to upstream behaviour:
   exact_taper: false | true (R(x) = Rp + (Rd-Rp) x/L at cell centres; per-metre dA0/dx)
   balanced_taper: false | true (taper source derived from the flux form; preserves rest state)
 
-This is a copy of upstream openBF 2.8.0 (revision fae58658e060640fb523141e47001e1522b88b0b), Apache-2.0, changed only in src/vessel.jl and src/solver.jl as listed. With every option at its default the code path is upstream's.
+This is openBF 2.8.0 (revision fae58658e060640fb523141e47001e1522b88b0b), Apache-2.0, with options added in src/vessel.jl, src/solver.jl, src/boundary_conditions.jl, src/simulation.jl and src/output.jl (the further options are listed in skills/openbf/SKILL.md). With every option at its default the code path is openBF 2.8.0's.
