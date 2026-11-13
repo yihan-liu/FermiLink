@@ -118,6 +118,57 @@ end
     return
 end
 
+# Pressure-based well-balanced right-hand side, evaluated on the extended state
+# (v.vA, v.vQ) with ghosts. Fills v.dAwb and v.dQwb for the M real cells.
+function wb_pressure_rhs!(v::Vessel, b::Blood)
+    invDx = v.invDx
+
+    # Pressure from the tube law at every extended cell.
+    @inbounds for i = 1:v.M+2
+        v.Pwb[i] = v.betae[i] * (sqrt(v.vA[i] / v.A0e[i]) - 1.0)
+    end
+
+    # Minmod slopes for P and Q on the wb_pressure path.
+    limit_slopes_minmod!(v.slopesA, v.Pwb, v.invDx, v.halfDx)
+    limit_slopes_minmod!(v.slopesQ, v.vQ, v.invDx, v.halfDx)
+
+    # Face fluxes j = 1..M+1 between extended cells j and j+1.
+    @inbounds for j = 1:v.M+1
+        PL = v.Pwb[j] + v.slopesA[j]
+        PR = v.Pwb[j+1] - v.slopesA[j+1]
+        QL = v.vQ[j] + v.slopesQ[j]
+        QR = v.vQ[j+1] - v.slopesQ[j+1]
+
+        AL = v.A0f[j] * (1.0 + PL / v.betaf[j])^2
+        AR = v.A0f[j] * (1.0 + PR / v.betaf[j])^2
+        check_area(v.label, j, AL)
+        check_area(v.label, j, AR)
+
+        cL = sqrt(v.betaf[j] / (2.0 * b.rho) * sqrt(AL / v.A0f[j]))
+        cR = sqrt(v.betaf[j] / (2.0 * b.rho) * sqrt(AR / v.A0f[j]))
+        lambda = max(abs(QL / AL) + cL, abs(QR / AR) + cR)
+
+        BL = v.gammaf[j] * AL^1.5
+        BR = v.gammaf[j] * AR^1.5
+
+        v.fluxA[j] = 0.5 * (QL + QR - lambda * (AR - AL))
+        v.fluxQ[j] = 0.5 * (v.alpha_conv * QL * QL / AL + v.alpha_conv * QR * QR / AR +
+                            BL + BR - lambda * (QR - QL))
+        v.BLa[j] = BL
+        v.BRa[j] = BR
+    end
+
+    # Cell update (cell i is extended cell i+1): left edge is AR of face i,
+    # right edge is AL of face i+1.
+    @inbounds for i = 1:v.M
+        v.dAwb[i] = -(v.fluxA[i+1] - v.fluxA[i]) * invDx
+        v.dQwb[i] = -(v.fluxQ[i+1] - v.fluxQ[i] - (v.BLa[i+1] - v.BRa[i])) * invDx
+        v.dQwb[i] -= (v.vA[i+1] / b.rho) * (2.0 * v.slopesA[i+1]) * invDx
+        v.dQwb[i] -= 2.0 * (v.gamma_profile + 2) * pi * b.mu * v.vQ[i+1] / (v.vA[i+1] * b.rho)
+    end
+    return
+end
+
 function muscl!(v::Vessel, dt::Float64, b::Blood)
     for i in eachindex(v.A)
         check_area(v.label, i, v.A[i])
@@ -138,28 +189,50 @@ function muscl!(v::Vessel, dt::Float64, b::Blood)
     @inbounds v.vA[end] = v.UM1A
     @inbounds v.vQ[end] = v.UM1Q
 
-    muscl_halfstep!(v, dxDt)
+    if v.wb_pressure
+        # Predictor: full pressure-based right-hand side (fluxes + sources).
+        wb_pressure_rhs!(v, b)
+        for i = eachindex(v.A)
+            @inbounds v.vA[i+1] += dt * v.dAwb[i]
+            @inbounds v.vQ[i+1] += dt * v.dQwb[i]
+        end
+        # i=1
+        @inbounds v.vA[1] = v.vA[2]
+        @inbounds v.vQ[1] = v.vQ[2]
+        # i=M+2
+        @inbounds v.vA[end] = v.vA[end-1]
+        @inbounds v.vQ[end] = v.vQ[end-1]
 
-    # step-2
-    for i = 2:v.M+1
-        @inbounds v.vA[i] += invDxDt * (v.fluxA[i-1] - v.fluxA[i])
-        @inbounds v.vQ[i] += invDxDt * (v.fluxQ[i-1] - v.fluxQ[i])
-    end
-    # i=1
-    @inbounds v.vA[1] = v.vA[2]
-    @inbounds v.vQ[1] = v.vQ[2]
-    # i=M+2
-    @inbounds v.vA[end] = v.vA[end-1]
-    @inbounds v.vQ[end] = v.vQ[end-1]
+        # Corrector on the predicted state.
+        wb_pressure_rhs!(v, b)
+        for i = eachindex(v.A)
+            @inbounds v.A[i] = 0.5 * (v.A[i] + v.vA[i+1] + dt * v.dAwb[i])
+            @inbounds v.Q[i] = 0.5 * (v.Q[i] + v.vQ[i+1] + dt * v.dQwb[i])
+        end
+    else
+        muscl_halfstep!(v, dxDt)
 
-    muscl_halfstep!(v, dxDt)
+        # step-2
+        for i = 2:v.M+1
+            @inbounds v.vA[i] += invDxDt * (v.fluxA[i-1] - v.fluxA[i])
+            @inbounds v.vQ[i] += invDxDt * (v.fluxQ[i-1] - v.fluxQ[i])
+        end
+        # i=1
+        @inbounds v.vA[1] = v.vA[2]
+        @inbounds v.vQ[1] = v.vQ[2]
+        # i=M+2
+        @inbounds v.vA[end] = v.vA[end-1]
+        @inbounds v.vQ[end] = v.vQ[end-1]
 
-    # 2:v.M+1
-    for i = eachindex(v.A)
-        @inbounds v.A[i] =
-            0.5 * (v.A[i] + v.vA[i+1] + invDxDt * (v.fluxA[i] - v.fluxA[i+1]))
-        @inbounds v.Q[i] =
-            0.5 * (v.Q[i] + v.vQ[i+1] + invDxDt * (v.fluxQ[i] - v.fluxQ[i+1]))
+        muscl_halfstep!(v, dxDt)
+
+        # 2:v.M+1
+        for i = eachindex(v.A)
+            @inbounds v.A[i] =
+                0.5 * (v.A[i] + v.vA[i+1] + invDxDt * (v.fluxA[i] - v.fluxA[i+1]))
+            @inbounds v.Q[i] =
+                0.5 * (v.Q[i] + v.vQ[i+1] + invDxDt * (v.fluxQ[i] - v.fluxQ[i+1]))
+        end
     end
 
     # Invalid areas cannot be advanced by the next time step.
@@ -168,25 +241,32 @@ function muscl!(v::Vessel, dt::Float64, b::Blood)
     end
 
     #source term
-    for i = eachindex(v.Q) # 1:v.M
-        #viscosity
-        @inbounds v.Q[i] -= 2 * (v.gamma_profile + 2) * pi * b.mu * v.Q[i] / (v.A[i] * b.rho) * dt
-
-        if v.tapered && v.balanced_taper
-            # balanced taper source: -(A/rho)(sqrt(A/A0)-1-sqrt(A)/(3sqrt(A0))) dbeta/dx + beta A^1.5 dA0/dx/(3 rho A0^1.5)
-            @inbounds sA = sqrt(v.A[i]); sA0 = sqrt(v.A0[i])
-            @inbounds v.Q[i] -= dt * (v.A[i] / b.rho) * (sA / sA0 - 1.0 - sA / (3 * sA0)) * v.dTaudx[i]
-            @inbounds v.Q[i] += dt * v.beta[i] * v.A[i] * sA * v.dA0dx[i] / (3 * b.rho * v.A0[i] * sA0)
-        elseif v.tapered
-            #dP/dA0
-            @inbounds v.Q[i] += dt * 0.5 * v.beta[i] * sqrt(v.A[i])*v.A[i] / (v.A0[i] * b.rho) * v.dA0dx[i]
-
-            #dP/dh0
-            @inbounds v.Q[i] -= dt * (v.A[i] / b.rho) * (sqrt(v.A[i] / v.A0[i]) - 1.0) * v.dTaudx[i]
+    if v.wb_pressure
+        # Split viscosity/taper sources are already inside wb_pressure_rhs!.
+        for i = eachindex(v.u)
+            @inbounds v.u[i] = v.Q[i] / v.A[i]
         end
+    else
+        for i = eachindex(v.Q) # 1:v.M
+            #viscosity
+            @inbounds v.Q[i] -= 2 * (v.gamma_profile + 2) * pi * b.mu * v.Q[i] / (v.A[i] * b.rho) * dt
 
-        # update
-        @inbounds v.u[i] = v.Q[i] / v.A[i]
+            if v.tapered && v.balanced_taper
+                # balanced taper source: -(A/rho)(sqrt(A/A0)-1-sqrt(A)/(3sqrt(A0))) dbeta/dx + beta A^1.5 dA0/dx/(3 rho A0^1.5)
+                @inbounds sA = sqrt(v.A[i]); sA0 = sqrt(v.A0[i])
+                @inbounds v.Q[i] -= dt * (v.A[i] / b.rho) * (sA / sA0 - 1.0 - sA / (3 * sA0)) * v.dTaudx[i]
+                @inbounds v.Q[i] += dt * v.beta[i] * v.A[i] * sA * v.dA0dx[i] / (3 * b.rho * v.A0[i] * sA0)
+            elseif v.tapered
+                #dP/dA0
+                @inbounds v.Q[i] += dt * 0.5 * v.beta[i] * sqrt(v.A[i])*v.A[i] / (v.A0[i] * b.rho) * v.dA0dx[i]
+
+                #dP/dh0
+                @inbounds v.Q[i] -= dt * (v.A[i] / b.rho) * (sqrt(v.A[i] / v.A0[i]) - 1.0) * v.dTaudx[i]
+            end
+
+            # update
+            @inbounds v.u[i] = v.Q[i] / v.A[i]
+        end
     end
 
     #parabolic system (visco-elastic)
@@ -222,6 +302,19 @@ function limit_slopes!(slopes::Vector{Float64}, U::Vector{Float64},
         t2 = min(max(a, 2b), max(2a, b))
         slopes[i] = ifelse(a > 0, ifelse(b > 0, t1, zero(Float64)),
                                    ifelse(b < 0, t2, zero(Float64))) * halfDx
+    end
+    return
+end
+
+function limit_slopes_minmod!(slopes::Vector{Float64}, U::Vector{Float64},
+                              invDx::Float64, halfDx::Float64)
+    N = length(slopes)
+    @inbounds slopes[1]   = 0.0
+    @inbounds slopes[end] = 0.0
+    @inbounds @simd for i in 2:N-1
+        a = (U[i]   - U[i-1]) * invDx
+        b = (U[i+1] - U[i])   * invDx
+        slopes[i] = (a * b > 0 ? (abs(a) < abs(b) ? a : b) : zero(Float64)) * halfDx
     end
     return
 end

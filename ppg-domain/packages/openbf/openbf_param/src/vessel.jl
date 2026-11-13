@@ -59,6 +59,18 @@ mutable struct Vessel
     dA0dx::Vector{Float64}
     dTaudx::Vector{Float64}
     balanced_taper::Bool
+    wb_pressure::Bool
+    R0f::Vector{Float64}
+    A0f::Vector{Float64}
+    betaf::Vector{Float64}
+    gammaf::Vector{Float64}
+    betae::Vector{Float64}
+    A0e::Vector{Float64}
+    Pwb::Vector{Float64}
+    BLa::Vector{Float64}
+    BRa::Vector{Float64}
+    dAwb::Vector{Float64}
+    dQwb::Vector{Float64}
     Pext::Float64
     gamma_profile::Int64
 
@@ -165,6 +177,7 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
     visco_law = get(config, "visco_law", "openbf")
     exact_taper = get(config, "exact_taper", false)
     balanced_taper = get(config, "balanced_taper", false)
+    wb_pressure = get(config, "wb_pressure", false)
     stiffness_law in ("openbf", "pwdb") || error("stiffness_law must be openbf or pwdb in $(config["label"])")
     visco_law in ("openbf", "pwdb") || error("visco_law must be openbf or pwdb in $(config["label"])")
     balanced_taper && ~exact_taper && error("balanced_taper requires exact_taper in $(config["label"])")
@@ -191,6 +204,7 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
     if exact_taper
         tapered = Rd != Rp
     end
+    wb_pressure && tapered && ~exact_taper && error("wb_pressure requires exact_taper in $(config["label"])")
     for i = 1:M
         R0[i] = exact_taper ? Rp + (Rd - Rp) * (i - 0.5) * dx / L : radius_slope * (i - 1) * dx + Rp
         if ~haskey(config, "h0")
@@ -213,6 +227,29 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
     else
         beta = sqrt.(pi ./ A0) .* h0 * E / (1 - sigma^2)
     end
+
+    # Pressure-based well-balanced option: reference state at the flux faces
+    # x_f = (j-1)*dx for j = 1..M+1 (face j lies between extended cells j and j+1).
+    R0f = zeros(Float64, M + 1)
+    A0f = zeros(Float64, M + 1)
+    betaf = zeros(Float64, M + 1)
+    gammaf = zeros(Float64, M + 1)
+    if wb_pressure
+        for j = 1:M+1
+            xf = (j - 1) * dx
+            R0fj = exact_taper ? Rp + (Rd - Rp) * xf / L : radius_slope * xf + Rp
+            R0f[j] = R0fj
+            A0f[j] = pi * R0fj * R0fj
+            if stiffness_law == "pwdb"
+                betaf[j] = (4 / 3) * 0.1 * (k1 * exp(k2 * 100 * R0fj) + k3)
+            else
+                h0f = haskey(config, "h0") ? config["h0"] : R0fj * (ah * exp(bh * R0fj) + ch * exp(dh * R0fj))
+                betaf[j] = sqrt(pi / A0f[j]) * h0f * E / (1 - sigma^2)
+            end
+            gammaf[j] = betaf[j] / (3 * b.rho * sqrt(A0f[j]))
+        end
+    end
+
     if balanced_taper
         # dTaudx carries d(beta)/dx (Pa/m) for the balanced taper source
         for i = 1:M
@@ -231,6 +268,18 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
     gamma[2:M+1] = beta ./ (3 * b.rho * R0 * sqrt(pi))
     gamma[1] = gamma[2] # ghost cells
     gamma[end] = gamma[end-1]
+
+    # Extended beta and reference area: ghost cells reuse the adjacent boundary cell.
+    betae = zeros(Float64, M + 2)
+    A0e = zeros(Float64, M + 2)
+    if wb_pressure
+        betae[2:M+1] = beta
+        betae[1] = beta[1]
+        betae[end] = beta[end]
+        A0e[2:M+1] = A0
+        A0e[1] = A0[1]
+        A0e[end] = A0[end]
+    end
 
     # TODO: add to docs
     # TODO: visco-elastic -> visco_elastic ???
@@ -313,6 +362,13 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
     Fl = zeros(Float64, M + 2)
     Fr = zeros(Float64, M + 2)
 
+    # Working arrays for the pressure-based well-balanced right-hand side.
+    Pwb = zeros(Float64, M + 2)
+    BLa = zeros(Float64, M + 1)
+    BRa = zeros(Float64, M + 1)
+    dAwb = zeros(Float64, M)
+    dQwb = zeros(Float64, M)
+
     gamma_profile = get(config, "gamma_profile", 2)
 
     waveforms = Dict()
@@ -348,6 +404,18 @@ function Vessel(config::Dict{Any,Any}, b::Blood, jump::Int64, tokeep::Vector{Str
         dA0dx,
         dTaudx,
         balanced_taper,
+        wb_pressure,
+        R0f,
+        A0f,
+        betaf,
+        gammaf,
+        betae,
+        A0e,
+        Pwb,
+        BLa,
+        BRa,
+        dAwb,
+        dQwb,
         Pext,
         gamma_profile,
         A,
