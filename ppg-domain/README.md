@@ -27,4 +27,19 @@ Before `--install`, run `chmod -R u+w ppg-domain/.runtime/fermilink-registry/pac
 
 This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
 
+## .runtime layout
+
+One directory per tool or data source, plain name, no symlinks; rules in the research workspace `docs/PROJECT.md`.
+
+| Entry | Purpose | Used by |
+| --- | --- | --- |
+| `fermilink-registry/` | Isolated FermiLink package registry, built by `scripts/integrate_fermilink.py --install --workspace` | `fermilink loop` (FERMILINK_SCIPKG_ROOT), fermilink-tools `launch.sh`/`status.sh` |
+| `julia/` | Julia 1.11.2 runtime, depot and `project-param` environment (develops `packages/openbf/openbf_param`) | `openbf` CLI, workspace G1/verification scripts, taper sandbox |
+| `pwdb/` | PWDB 0.2.0 cache (`PWs_csv.zip`, `geo.zip`, model configs, onset times), read-only | `pwdb` package, workspace PWDB builders and analysis |
+| `ppg-venv/` | Python venv holding the `openbf` CLI shim | `openbf` CLI |
+| `mcx/` | `venv/` for the `mcx` package (PMCX CUDA) | `mcx` CLI |
+| `pulse/` | Python venv with the Pulse engine bindings | `pulse` CLI |
+| `pulse-build/` | Pulse C++ build tree | Pulse rebuilds (`packages/pulse/README.md`) |
+| `pulse-jdk/` | OpenJDK 21 used by the Pulse build | Pulse build |
+
 Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`. Project-specific models, transfer definitions and the Round 1 `peripheral-ppg` pipeline live in the research workspace (`rounds/<round>/methods/`, `archive/legacy-code/reference-implementations/`); the old acceptance scripts are in `archive/`.
