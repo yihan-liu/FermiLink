@@ -29,6 +29,6 @@
 | `mcx:detector-normalization-units` | **passed** | Independent raw photon check of voxel path conversion, unit collected fraction, detector area in mm2 and reflectance in mm-2 |
 | `ppg:pulse-step-units` | **passed** | Real manifests agree on engine/output timestep and explicit time, pressure, cardiac-output, volume and absorption units |
 | `sources:local-citations` | **passed** | All cataloged local source and knowledge paths resolve |
-| `fermilink:agent-task` | **blocked** | agent task not run: project-local Codex CLI codex-cli 0.166.0 is installed but not authenticated (login status: Not logged in; exit code 1; checked 2026-11-02T11:31:52.582853+00:00; PATH is child-process only) |
+| `fermilink:agent-task` | **blocked** | agent task not run: project-local Codex CLI 0.166.0 was installed but not authenticated at the check; that CLI was removed on 2026-11-13 (login status: Not logged in; exit code 1; checked 2026-11-02T11:31:52.582853+00:00; PATH is child-process only) |
 
 被阻断项表示验收未完成，不计为通过。

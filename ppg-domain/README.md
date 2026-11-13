@@ -20,11 +20,11 @@ Entry rule (same as mcx): upstream tools unchanged (openbf: one implementation, 
 From the FermiLink root:
 
 ```bash
-PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/scripts/integrate_fermilink.py --install
+PPG_FORWARD_PYTHON=/home/liuyihan/.venvs/bp/bin/python python3 ppg-domain/scripts/integrate_fermilink.py --install --workspace
 ```
 
 Before `--install`, run `chmod -R u+w ppg-domain/.runtime/fermilink-registry/packages/openbf`; afterwards restore its directories to 555 and files to 444.
 
-This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb; statsmodels under `.runtime/analysis-python`). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
+This refreshes the isolated registry `ppg-domain/.runtime/fermilink-registry` and writes CLI shims to `ppg-domain/.runtime/ppg-venv/bin/` (`openbf`). Analysis Python for runs: `/home/liuyihan/.venvs/bp/bin/python` (NumPy, SciPy, pandas, pyarrow, vitaldb). Julia for openBF: `.runtime/julia`. PWDB cache: `.runtime/pwdb`.
 
-Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`. Project-specific models, transfer definitions and the Round 1 `peripheral-ppg` pipeline live in the research workspace (`rounds/2026-11-05-round3/methods/`, `archive/legacy-code/reference-implementations/`); the old acceptance scripts are in `archive/`.
+Round 2 used the earlier `ppg-forward` package; its code is at git tag `round2-final`. Project-specific models, transfer definitions and the Round 1 `peripheral-ppg` pipeline live in the research workspace (`rounds/<round>/methods/`, `archive/legacy-code/reference-implementations/`); the old acceptance scripts are in `archive/`.

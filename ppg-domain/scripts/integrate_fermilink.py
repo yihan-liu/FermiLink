@@ -99,7 +99,7 @@ def installed_tree_matches(stage: Path, installed: Path) -> bool:
         return False
     return package_digest(stage, include_symlinks=False) == package_digest(installed, include_symlinks=False)
 
-def install_packages() -> None:
+def install_packages(*, workspace: bool = False) -> None:
     if not CLI.is_file() or not FERMILINK_PYTHON.is_file():
         raise RuntimeError(f"FermiLink executable environment not found under {FERMILINK_ROOT}")
     SCIPKG_ROOT.mkdir(parents=True, exist_ok=True)
@@ -120,9 +120,9 @@ def install_packages() -> None:
             if not registered_source.startswith("local-path:"):
                 raise RuntimeError(f"Refusing to replace package with non-local source metadata: {package_id}")
             prior_source = Path(registered_source.removeprefix("local-path:")).resolve()
-            if STAGING_ROOT.resolve() not in prior_source.parents:
+            if STAGING_ROOT.resolve() not in prior_source.parents and prior_source != source.resolve():
                 raise RuntimeError(f"Refusing to refresh package from an unowned source path: {package_id}")
-            force = not (Path(registered_source.removeprefix("local-path:")).resolve() == stage.resolve() and installed_tree_matches(stage, installed))
+            force = not (prior_source in (stage.resolve(), source.resolve()) and installed_tree_matches(stage, installed))
             if force:
                 print(f"refreshing managed snapshot: {package_id}")
             else:
@@ -167,6 +167,15 @@ def install_packages() -> None:
             run([str(CLI), "delete", package_id])
             print(f"removed retired registration: {package_id}")
     ensure_ppg_cli()
+    if workspace:
+        metadata = registry()
+        for package_id, *_ in PACKAGE_SPECS:
+            metadata["packages"][package_id]["source"] = "local-path:" + str((ROOT / "packages" / package_id).resolve())
+        path = SCIPKG_ROOT / "registry.json"
+        temp = path.with_name("registry.json.tmp")
+        temp.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        os.replace(temp, path)
+        print("registry sources: persistent workspace packages")
 
 def ensure_ppg_cli() -> None:
     """Create a project-local CLI shim without writing into package source or solver venvs."""
@@ -191,12 +200,13 @@ def ensure_ppg_cli() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--install", action="store_true", help="register/refresh managed packages, configure overlays/dependencies, and prepare the PPG CLI")
+    parser.add_argument("--workspace", action="store_true", help="record persistent workspace package sources in the registry")
     args = parser.parse_args()
     try:
         for spec in PACKAGE_SPECS:
             check_package(*spec)
         if args.install:
-            install_packages()
+            install_packages(workspace=args.workspace)
     except Exception as error:
         print(f"BLOCKED: {error}", file=sys.stderr)
         return 2
